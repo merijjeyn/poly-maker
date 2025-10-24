@@ -42,7 +42,7 @@ class GLFTMarketStrategy(MarketStrategy):
             bid_price, ask_price = new_bid_price, new_ask_price
         
         bid_price, ask_price = cls.apply_safety_guards(bid_price, ask_price, mid_price, tick, best_bid, best_ask, force_sell)
-        # Logan.debug(f"result of GLFT: bid_price: {bid_price}, ask_price: {ask_price}, force_sell: {force_sell}, best_bid: {best_bid}, best_ask: {best_ask}, mid_price: {mid_price}, reward skew: {skew}, token: {token}", namespace="poly_data.market_strategy.glft_strategy")
+        Logan.debug(f"result of GLFT: bid_price: {bid_price}, ask_price: {ask_price}, force_sell: {force_sell}, best_bid: {best_bid}, best_ask: {best_ask}, mid_price: {mid_price}, reward skew: {skew}, token: {token}", namespace="poly_data.market_strategy.glft_strategy")
         return bid_price, ask_price
 
     @classmethod

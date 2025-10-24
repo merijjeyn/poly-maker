@@ -22,7 +22,6 @@ from py_clob_client.clob_types import OpenOrderParams
 
 # Smart contract ABIs
 from trading_bot.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
-from trading_bot.data_utils import get_readable_from_condition_id, get_readable_from_token_id
 
 
 class PolymarketClient:
@@ -144,7 +143,7 @@ class PolymarketClient:
             return resp
         except Exception as ex:
             Logan.error(
-                f"Error posting order for market \"{get_readable_from_token_id(token)}\" ({action} {size} @ {price}): {ex}",
+                f"Error posting order for token \"token\" ({action} {size} @ {price}): {ex}",
                  namespace="poly_data.polymarket_client",
                 exception=ex
             )
@@ -328,7 +327,7 @@ class PolymarketClient:
         # Check if there was an error
         if result.returncode != 0:
             Logan.error(
-                f"Error in merging positions from market {get_readable_from_condition_id(condition_id)}: {result.stderr}",
+                f"Error in merging positions from market {condition_id}: {result.stderr}",
                 namespace="poly_data.polymarket_client"
             )
             raise Exception(f"Error in merging positions: {result.stderr}")

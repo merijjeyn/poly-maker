@@ -1,6 +1,23 @@
 import threading
 import pandas as pd
-from typing import Dict, Optional
+from typing import Optional, TypeVar, Generic, cast
+
+from trading_bot.polymarket_client import PolymarketClient
+
+T = TypeVar('T')
+
+class Global(Generic[T]):
+    _value: T | None = None
+
+    def __get__(self, obj, objtype=None) -> T:
+        if self._value is None:
+            raise RuntimeError("Uninitialized")
+        return self._value
+    
+    def __set__(self, obj, value: T) -> None:
+        self._value = value
+
+
 # ============ Market Data ============
 
 # List of all tokens being tracked
@@ -30,7 +47,7 @@ available_liquidity: Optional[float] = None
 # ============ Client & Parameters ============
 
 # Polymarket client instance
-client = None
+client = cast(PolymarketClient, Global[PolymarketClient]())
 
 # Trading parameters from Google Sheets
 params = {}
