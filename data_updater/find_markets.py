@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import os
 import requests
 import time
 import warnings
@@ -9,10 +8,6 @@ from logan import Logan
 from data_updater.activity_metrics import add_activity_metrics_to_market_data
 from configuration import TCNF
 warnings.filterwarnings("ignore")
-
-
-if not os.path.exists('data'):
-    os.makedirs('data')
 
     
 def get_all_markets(client) -> pd.DataFrame:
@@ -422,8 +417,6 @@ def add_volatility(row):
     price_df['t'] = pd.to_datetime(price_df['t'], unit='s')
     price_df['p'] = price_df['p'].round(2)
 
-    price_df.to_csv(f'data/{row["token1"]}.csv', index=False)
-    
     price_df['log_return'] = np.log(price_df['p'] / price_df['p'].shift(1))
 
     row_dict = row.copy()

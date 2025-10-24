@@ -2,7 +2,7 @@ import time
 from dotenv import load_dotenv
 import pandas as pd
 from data_updater.trading_utils import get_clob_client
-from data_updater.google_utils import get_spreadsheet
+from google_utils import get_spreadsheet
 from data_updater.find_markets import cleanup_all_markets, get_all_markets, get_all_markets_detailed
 from gspread_dataframe import set_with_dataframe
 from logan import Logan

@@ -2,7 +2,7 @@ import pandas as pd
 from py_clob_client.headers.headers import create_level_2_headers
 from py_clob_client.clob_types import RequestArgs
 
-from poly_utils.google_utils import get_spreadsheet
+from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 import requests
 import json

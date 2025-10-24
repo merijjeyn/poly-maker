@@ -2,8 +2,8 @@ from math import log
 
 from logan import Logan
 from configuration import TCNF
-from poly_data.data_utils import get_position
-from poly_data.market_strategy import MarketStrategy
+from trading_bot.data_utils import get_position
+from trading_bot.market_strategy import MarketStrategy
 
 
 class AnSMarketStrategy(MarketStrategy):

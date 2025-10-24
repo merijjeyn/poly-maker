@@ -1,4 +1,4 @@
-from poly_data.polymarket_client import PolymarketClient
+from trading_bot.polymarket_client import PolymarketClient
 from poly_stats.account_stats import update_stats_once
 
 import pandas as pd

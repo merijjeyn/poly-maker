@@ -1,7 +1,7 @@
 import math
 
 from logan import Logan 
-import poly_data.global_state as global_state
+import trading_bot.global_state as global_state
 
 def get_best_bid_ask_deets(token, size):
     best_bid, best_bid_size, second_best_bid, second_best_bid_size, top_bid = find_best_price_with_size(global_state.order_book_data[token]['bids'], size, reverse=True)

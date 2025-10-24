@@ -6,12 +6,12 @@ import argparse                # Command line argument parsing
 from logan import Logan
 
 
-from poly_data.polymarket_client import PolymarketClient
-from poly_data.data_utils import update_markets, update_positions, update_orders, update_liquidity, clear_all_orders
-from poly_data.websocket_handlers import connect_market_websocket, connect_user_websocket
-import poly_data.global_state as global_state
-from poly_data.data_processing import remove_from_performing
-from poly_data.strategy_factory import StrategyFactory, StrategyType
+from trading_bot.polymarket_client import PolymarketClient
+from trading_bot.data_utils import update_markets, update_positions, update_orders, update_liquidity, clear_all_orders
+from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
+import trading_bot.global_state as global_state
+from trading_bot.data_processing import remove_from_performing
+from trading_bot.market_strategy.strategy_factory import StrategyFactory, StrategyType
 from dotenv import load_dotenv
 from configuration import MCNF
 

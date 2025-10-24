@@ -3,7 +3,7 @@ Test script for the enhanced market selection flow with activity metrics
 """
 
 import pandas as pd
-from poly_data.market_selection import filter_selected_markets
+from trading_bot.market_selection import filter_selected_markets
 from data_updater.activity_metrics import add_activity_metrics_to_market_data
 from configuration import TCNF
 from logan import Logan

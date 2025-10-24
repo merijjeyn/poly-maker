@@ -21,8 +21,8 @@ from logan import Logan
 from py_clob_client.clob_types import OpenOrderParams
 
 # Smart contract ABIs
-from poly_data.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
-from poly_data.data_utils import get_readable_from_condition_id, get_readable_from_token_id
+from trading_bot.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
+from trading_bot.data_utils import get_readable_from_condition_id, get_readable_from_token_id
 
 
 class PolymarketClient:

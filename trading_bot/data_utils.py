@@ -1,9 +1,9 @@
 import pandas as pd
-import poly_data.global_state as global_state
-from poly_data.utils import get_sheet_df
+import trading_bot.global_state as global_state
+from google_utils import get_sheet_df
 import time
-import poly_data.global_state as global_state
-from poly_data.market_selection import calculate_position_sizes, filter_selected_markets
+import trading_bot.global_state as global_state
+from trading_bot.market_selection import calculate_position_sizes, filter_selected_markets
 from logan import Logan
 
 # Note: is accidently removing position bug fixed? 

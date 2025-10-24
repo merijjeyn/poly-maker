@@ -4,9 +4,9 @@ StrategyFactory manages the global market strategy instance used throughout the 
 
 from enum import Enum
 
-from poly_data.market_strategy import MarketStrategy
-from poly_data.market_strategy.ans_strategy import AnSMarketStrategy
-from poly_data.market_strategy.glft_strategy import GLFTMarketStrategy
+from trading_bot.market_strategy import MarketStrategy
+from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
+from trading_bot.market_strategy.glft_strategy import GLFTMarketStrategy
 
 
 class StrategyType(str, Enum):

@@ -5,16 +5,15 @@ import asyncio                  # Asynchronous I/O
 import pandas as pd             # Data analysis library
 from logan import Logan         # Logging
 
-import poly_data.global_state as global_state
-import poly_data.CONSTANTS as CONSTANTS
+import trading_bot.global_state as global_state
 from configuration import TCNF
 
 # Import utility functions for trading
-from poly_data.orders_in_flight import get_orders_in_flight, set_order_in_flight
-from poly_data.strategy_factory import StrategyFactory
-from poly_data.trading_utils import get_best_bid_ask_deets, round_down, round_up
-from poly_data.data_utils import get_position, get_order, get_readable_from_condition_id, get_total_balance
-from poly_data.market_selection import get_enhanced_market_row
+from trading_bot.orders_in_flight import get_orders_in_flight, set_order_in_flight
+from trading_bot.market_strategy.strategy_factory import StrategyFactory
+from trading_bot.trading_utils import get_best_bid_ask_deets, round_down, round_up
+from trading_bot.data_utils import get_position, get_order, get_readable_from_condition_id, get_total_balance
+from trading_bot.market_selection import get_enhanced_market_row
 
 # Create directory for storing position risk information
 if not os.path.exists('positions/'):
@@ -204,13 +203,13 @@ async def perform_trade(market):
             amount_to_merge = min(pos_1, pos_2)
             
             # Only merge if positions are above minimum threshold
-            if float(amount_to_merge) > CONSTANTS.MIN_MERGE_SIZE:
+            if float(amount_to_merge) > TCNF.MIN_MERGE_SIZE:
                 # Get exact position sizes from blockchain for merging
                 pos_1_raw = client.get_position(row['token1'])[0]
                 pos_2_raw = client.get_position(row['token2'])[0]
                 amount_to_merge_raw = min(pos_1_raw, pos_2_raw)
 
-                if amount_to_merge_raw / 1e6 > CONSTANTS.MIN_MERGE_SIZE:
+                if amount_to_merge_raw / 1e6 > TCNF.MIN_MERGE_SIZE:
                     Logan.info(f"Merging {amount_to_merge_raw} of {row['token1']} and {row['token2']}", namespace="trading")
                     try:
                         client.merge_positions(amount_to_merge_raw, market, row['neg_risk'] == 'TRUE')

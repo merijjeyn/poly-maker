@@ -8,14 +8,13 @@ This module contains the logic for:
 These are currently stub implementations that can be filled in with custom logic.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Optional
 from dataclasses import dataclass
 import pandas as pd
-import poly_data.global_state as global_state
+import trading_bot.global_state as global_state
 import numpy as np
 from logan import Logan
-from poly_data.utils import get_sheet_df
-from poly_utils.google_utils import get_spreadsheet
+from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 from configuration import TCNF
 

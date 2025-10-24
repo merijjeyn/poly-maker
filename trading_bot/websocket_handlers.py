@@ -4,8 +4,8 @@ import json                        # JSON handling
 import websockets                  # WebSocket client
 from logan import Logan
 
-from poly_data.data_processing import process_data, process_user_data
-import poly_data.global_state as global_state
+from trading_bot.data_processing import process_data, process_user_data
+import trading_bot.global_state as global_state
 from configuration import MCNF
 
 async def connect_market_websocket(chunk):

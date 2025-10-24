@@ -1,14 +1,13 @@
 import json
 from sortedcontainers import SortedDict
-import poly_data.global_state as global_state
-import poly_data.CONSTANTS as CONSTANTS
+import trading_bot.global_state as global_state
 
-from poly_data.orders_in_flight import clear_order_in_flight
-from poly_data.trading_utils import get_best_bid_ask_deets
-from trading import perform_trade
-import time 
+from trading_bot.orders_in_flight import clear_order_in_flight
+from trading_bot.trading_utils import get_best_bid_ask_deets
+from trading_bot.trading import perform_trade
+import time     
 import asyncio
-from poly_data.data_utils import set_position, set_order, update_positions
+from trading_bot.data_utils import set_position, set_order, update_positions
 from logan import Logan
 
 def sync_order_book_data_for_reverse_token(updated_token: str):
