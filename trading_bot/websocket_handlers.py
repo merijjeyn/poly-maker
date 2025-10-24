@@ -41,7 +41,7 @@ async def connect_market_websocket(chunk):
                     message = await websocket.recv()
                     json_data = json.loads(message)
                     # Process order book updates and trigger trading as needed
-                    process_data(json_data)
+                    await process_data(json_data)
             except websockets.ConnectionClosed as e:
                 Logan.error(
                     "Market websocket connection closed unexpectedly",
@@ -101,7 +101,7 @@ async def connect_user_websocket():
                     message = await websocket.recv()
                     json_data = json.loads(message)
                     # Process trade and order updates
-                    process_user_data(json_data)
+                    await process_user_data(json_data)
             except websockets.ConnectionClosed as e:
                 Logan.error(
                     "User websocket connection closed unexpectedly",

@@ -148,16 +148,12 @@ async def perform_trade(market):
     Args:
         market (str): The market ID to trade on
     """
-    # Don't act on the market if there is an order in flight for the market
-    orders_in_flight = get_orders_in_flight(market)
-    if len(orders_in_flight) > 0:
-        return
-    
     # Create a lock for this market if it doesn't exist
     if market not in market_locks:
         market_locks[market] = asyncio.Lock()
 
     # Use lock to prevent concurrent trading on the same market
+    # Note: The task scheduler is used to prevent concurrent trading on the same market so locks should not be needed. But let's do a slow rollout
     async with market_locks[market]:
         try:
             client = global_state.client

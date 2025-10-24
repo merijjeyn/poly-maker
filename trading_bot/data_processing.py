@@ -3,7 +3,7 @@ from sortedcontainers import SortedDict
 import trading_bot.global_state as global_state
 
 from trading_bot.orders_in_flight import clear_order_in_flight
-from trading_bot.trading_utils import get_best_bid_ask_deets
+from trading_bot.task_scheduler import Scheduler
 from trading_bot.trading import perform_trade
 import time     
 import asyncio
@@ -45,7 +45,7 @@ def process_price_change(token: str, side, price_level, new_size):
     
     sync_order_book_data_for_reverse_token(token)
 
-def process_data(json_datas, trade=True):
+async def process_data(json_datas, trade=True):
     # Check if json_datas is a dict or a list of dicts
     if isinstance(json_datas, dict):
         json_datas = [json_datas]
@@ -63,7 +63,8 @@ def process_data(json_datas, trade=True):
             process_book_data(token, json_data)
 
             if trade:
-                asyncio.create_task(perform_trade(market))
+                await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                
                 
         elif event_type == 'price_change':
             for data in json_data['price_changes']:
@@ -74,7 +75,7 @@ def process_data(json_datas, trade=True):
                 process_price_change(token, side, price_level, new_size)
 
                 if trade:
-                    asyncio.create_task(perform_trade(market))
+                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
 
 def add_to_performing(col, id):
     if col not in global_state.performing:
@@ -94,7 +95,7 @@ def remove_from_performing(col, id):
     if col in global_state.performing_timestamps:
         global_state.performing_timestamps[col].pop(id, None)
 
-def process_user_data(rows):
+async def process_user_data(rows):
     if isinstance(rows, dict):
         rows = [rows]
     elif not isinstance(rows, list):
@@ -160,7 +161,7 @@ def process_user_data(rows):
                         f"Confirmed. Performing is {len(global_state.performing[col])}",
                         namespace="poly_data.data_processing"
                     )
-                    asyncio.create_task(perform_trade(market))
+                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
                 elif row['status'] == 'MATCHED':
                     add_to_performing(col, row['id'])
 
@@ -173,7 +174,7 @@ def process_user_data(rows):
                         f"Position after matching is {global_state.positions[str(token)]}",
                         namespace="poly_data.data_processing"
                     )
-                    asyncio.create_task(perform_trade(market))
+                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
                 elif row['status'] == 'MINED':
                     remove_from_performing(col, row['id'])
 
@@ -198,5 +199,5 @@ def process_user_data(rows):
                 set_order(token, side, order_size, row['price'])
                 clear_order_in_flight(row['id'])
                 
-                asyncio.create_task(perform_trade(market))
+                await Scheduler.schedule_task(market, lambda: perform_trade(market))
 
