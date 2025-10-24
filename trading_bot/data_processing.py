@@ -199,5 +199,6 @@ async def process_user_data(rows):
                 set_order(token, side, order_size, row['price'])
                 clear_order_in_flight(row['id'])
                 
-                await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                if (row['type'] != 'PLACEMENT'): 
+                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
 
