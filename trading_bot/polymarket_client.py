@@ -21,6 +21,8 @@ from py_clob_client.clob_types import OpenOrderParams
 # Smart contract ABIs
 from trading_bot.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
 
+from utils import nullthrows
+
 
 class PolymarketClient:
     """
@@ -46,9 +48,9 @@ class PolymarketClient:
         host="https://clob.polymarket.com"
 
         # Get credentials from environment variables
-        key=os.getenv("PK")
-        browser_address = os.getenv("BROWSER_ADDRESS")
-        signature_type = int(os.getenv("SIGNATURE_TYPE"))
+        key=nullthrows(os.getenv("PK"))
+        browser_address = nullthrows(os.getenv("BROWSER_ADDRESS"))
+        signature_type = int(nullthrows(os.getenv("SIGNATURE_TYPE")))
 
         # Don't log sensitive wallet information
         Logan.info(
@@ -76,7 +78,7 @@ class PolymarketClient:
         
         # Set up USDC contract for balance checks
         self.usdc_contract = web3.eth.contract(
-            address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", 
+            address=Web3.to_checksum_address("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"), 
             abi=erc20_abi
         )
 
@@ -89,12 +91,12 @@ class PolymarketClient:
 
         # Initialize contract interfaces
         self.neg_risk_adapter = web3.eth.contract(
-            address=self.addresses['neg_risk_adapter'], 
+            address=Web3.to_checksum_address(self.addresses['neg_risk_adapter']), 
             abi=NegRiskAdapterABI
         )
 
         self.conditional_tokens = web3.eth.contract(
-            address=self.addresses['conditional_tokens'], 
+            address=Web3.to_checksum_address(self.addresses['conditional_tokens']), 
             abi=ConditionalTokenABI
         )
 
@@ -137,7 +139,7 @@ class PolymarketClient:
             
         try:
             # Submit the signed order to the API
-            resp = self.client.post_order(signed_order, orderType=OrderType.GTD)
+            resp = self.client.post_order(signed_order, orderType=OrderType.GTD)  # type: ignore
             return resp
         except Exception as ex:
             Logan.error(
@@ -312,7 +314,8 @@ class PolymarketClient:
         amount_to_merge_str = str(int(amount_to_merge))
 
         # Prepare the command to run the JavaScript script
-        env_arg = f" {shlex.quote(self.env_path)}" if getattr(self, 'env_path', None) else ""
+        env_path = getattr(self, 'env_path', None)
+        env_arg = f" {shlex.quote(env_path)}" if env_path else ""
         node_command = f'node poly_merger/merge.js {amount_to_merge_str} {condition_id} {"true" if is_neg_risk_market else "false"}{env_arg}'
         Logan.info(
             f"Running merge command: {node_command}",

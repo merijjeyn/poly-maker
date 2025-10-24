@@ -14,7 +14,7 @@ def update_positions(avgOnly=False):
         if asset in  global_state.positions:
             position = global_state.positions[asset].copy()
         else:
-            position = {'size': 0, 'avgPrice': 0}
+            position = {'size': 0, 'avgPrice': 0.0}
 
         position['avgPrice'] = row['avgPrice']
 
@@ -74,7 +74,7 @@ def update_liquidity():
         )
         # Keep previous value if update fails
 
-def get_total_balance():
+def get_total_balance() -> float:
     """Calculate total balance as available liquidity plus invested collateral.
 
     Uses in-memory state:
@@ -95,7 +95,6 @@ def get_total_balance():
                 positions_value += size * avg_price
 
         total = liquidity + positions_value
-        global_state.total_balance = total
         return total
     except Exception as e:
         Logan.error(
@@ -103,39 +102,25 @@ def get_total_balance():
             namespace="poly_data.data_utils",
             exception=e
         )
-        return None
+        return 0.0
 
 def get_position(token):
     token = str(token)
     if token in global_state.positions:
         return global_state.positions[token]
     else:
-        return {'size': 0, 'avgPrice': 0}
+        return {'size': 0, 'avgPrice': 0.0}
 
 def get_readable_from_condition_id(condition_id) -> str:
     if global_state.df is not None and len(global_state.df) > 0:
         matching_market = global_state.df[global_state.df['condition_id'] == str(condition_id)]
         if len(matching_market) > 0:
-            return matching_market['question'].iloc[0]
+            return matching_market.iloc[0]['question']
     Logan.error(
         f"No matching market found for condition ID {condition_id}, df length: {len(global_state.df)}",
     )
     return "Unknown"
-
-def get_readable_from_token_id(token_id) -> str:
-    if global_state.df is not None and len(global_state.df) > 0:
-        matching_market = global_state.df[
-            (global_state.df['token1'] == token_id) | 
-            (global_state.df['token2'] == token_id)
-        ]
-        if len(matching_market) > 0:
-            return matching_market['question'].iloc[0]
-    Logan.error(
-        f"No matching market found for token ID {token_id}, df length: {len(global_state.df)}",
-        namespace="poly_data.data_utils"
-    )
-    return "Unknown"
-
+    
 def set_position(token, side, size, price, source='websocket'):
     token = str(token)
     size = float(size)
@@ -248,7 +233,7 @@ def get_order(token):
     
 def set_order(token, side, size, price):
     curr = {}
-    curr = {side: {'price': 0, 'size': 0}}
+    curr = {side: {'price': 0.0, 'size': 0.0}}
 
     curr[side]['size'] = float(size)
     curr[side]['price'] = float(price)
@@ -264,10 +249,10 @@ def set_order(token, side, size, price):
 def update_markets_with_positions():
     """Create dataframe of markets where we currently have positions"""
     if global_state.positions:
-        position_tokens = set()
+        position_tokens = []
         for token, position in global_state.positions.items():
             if position['size'] > 0:
-                position_tokens.add(str(token))
+                position_tokens.append(str(token))
         
         if position_tokens:
             # Find markets that contain any of our position tokens

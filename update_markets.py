@@ -75,7 +75,7 @@ def sort_df(df):
     return sorted_df
 
 def fetch_and_process_data():
-    global spreadsheet, client, wk_all, wk_vol, sel_df
+    global spreadsheet, client, wk_all
     
     spreadsheet = get_spreadsheet()
     client = get_clob_client()

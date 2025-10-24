@@ -42,9 +42,11 @@ def get_clob_client():
 
 def approveContracts():
     web3 = Web3(Web3.HTTPProvider("https://polygon-rpc.com"))
-    wallet = web3.eth.account.privateKeyToAccount(os.getenv("PK"))
-    
-    
+    pk = os.getenv("PK")
+    assert pk is not None, "PK environment variable must be set"
+    wallet = web3.eth.account.from_key(pk)
+
+
     with open('erc20ABI.json', 'r') as file:
         erc20_abi = json.load(file)
 
@@ -53,16 +55,16 @@ def approveContracts():
 
     usdc_contract = web3.eth.contract(address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=erc20_abi)   # usdc.e
     ctf_contract = web3.eth.contract(address=ctf_address, abi=erc1155_set_approval)
-    
+
 
     for address in ['0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E', '0xC5d563A36AE78145C45a50134d48A1215220f80a', '0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296']:
-        usdc_nonce = web3.eth.getTransactionCount( wallet.address )
-        raw_usdc_txn = usdc_contract.functions.approve(address, int(MAX_INT, 0)).build_transaction({
-            "chainId": 137, 
-            "from": wallet.address, 
+        usdc_nonce = web3.eth.get_transaction_count(wallet.address)
+        raw_usdc_txn = usdc_contract.functions.approve(address, MAX_INT).build_transaction({
+            "chainId": 137,
+            "from": wallet.address,
             "nonce": usdc_nonce
         })
-        signed_usdc_txn = web3.eth.account.sign_transaction(raw_usdc_txn, private_key=os.getenv("PK"))
+        signed_usdc_txn = web3.eth.account.sign_transaction(raw_usdc_txn, private_key=pk)
         usdc_tx_receipt = web3.eth.wait_for_transaction_receipt(signed_usdc_txn, 600)
 
 
@@ -72,15 +74,15 @@ def approveContracts():
         )
         time.sleep(1)
 
-        ctf_nonce = web3.eth.getTransactionCount( wallet.address )
-        
-        raw_ctf_approval_txn = ctf_contract.functions.setApprovalForAll(address, True).buildTransaction({
-            "chainId": 137, 
-            "from": wallet.address, 
+        ctf_nonce = web3.eth.get_transaction_count(wallet.address)
+
+        raw_ctf_approval_txn = ctf_contract.functions.setApprovalForAll(address, True).build_transaction({
+            "chainId": 137,
+            "from": wallet.address,
             "nonce": ctf_nonce
         })
 
-        signed_ctf_approval_tx = web3.eth.account.sign_transaction(raw_ctf_approval_txn, private_key=os.getenv("PK"))
+        signed_ctf_approval_tx = web3.eth.account.sign_transaction(raw_ctf_approval_txn, private_key=pk)
         send_ctf_approval_tx = web3.eth.send_raw_transaction(signed_ctf_approval_tx.rawTransaction)
         ctf_approval_tx_receipt = web3.eth.wait_for_transaction_receipt(send_ctf_approval_tx, 600)
 
@@ -91,24 +93,24 @@ def approveContracts():
         time.sleep(1)
 
 
-    
-    nonce = web3.eth.getTransactionCount( wallet.address )
-    raw_txn_2 = usdc_contract.functions.approve("0xC5d563A36AE78145C45a50134d48A1215220f80a", int(MAX_INT, 0)).build_transaction({
-        "chainId": 137, 
-        "from": wallet.address, 
+
+    nonce = web3.eth.get_transaction_count(wallet.address)
+    raw_txn_2 = usdc_contract.functions.approve("0xC5d563A36AE78145C45a50134d48A1215220f80a", MAX_INT).build_transaction({
+        "chainId": 137,
+        "from": wallet.address,
         "nonce": nonce
     })
-    signed_txn_2 = web3.eth.account.sign_transaction(raw_txn_2, private_key=os.getenv("PK"))
+    signed_txn_2 = web3.eth.account.sign_transaction(raw_txn_2, private_key=pk)
     web3.eth.send_raw_transaction(signed_txn_2.rawTransaction)
 
 
-    nonce = web3.eth.getTransactionCount( wallet.address )
-    raw_txn_3 = usdc_contract.functions.approve("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296", int(MAX_INT, 0)).build_transaction({
-        "chainId": 137, 
-        "from": wallet.address, 
+    nonce = web3.eth.get_transaction_count(wallet.address)
+    raw_txn_3 = usdc_contract.functions.approve("0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296", MAX_INT).build_transaction({
+        "chainId": 137,
+        "from": wallet.address,
         "nonce": nonce
     })
-    signed_txn_3 = web3.eth.account.sign_transaction(raw_txn_3, private_key=os.getenv("PK"))
+    signed_txn_3 = web3.eth.account.sign_transaction(raw_txn_3, private_key=pk)
     web3.eth.send_raw_transaction(signed_txn_3.rawTransaction)
     
     
@@ -140,7 +142,7 @@ def get_position(marketId):
     client = get_clob_client()
     position_res = client.get_balance_allowance(
         BalanceAllowanceParams(
-            asset_type=AssetType.CONDITIONAL,
+            asset_type=AssetType.CONDITIONAL,  # type: ignore
             token_id=marketId
         )
     )

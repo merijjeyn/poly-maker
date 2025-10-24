@@ -240,6 +240,10 @@ async def perform_trade(market):
                 top_bid = round(deets['top_bid'], round_length) if deets['top_bid'] is not None else None
                 top_ask = round(deets['top_ask'], round_length) if deets['top_ask'] is not None else None
 
+                if top_bid is None or top_ask is None:
+                    Logan.error(f"Top bid or top ask is None for token {token}", namespace="trading")
+                    continue
+
                 # Get our current position and average price
                 pos = get_position(token)
                 position = pos['size']
@@ -422,6 +426,6 @@ async def perform_trade(market):
                         send_sell_order(order)
 
         except Exception as ex:
-            Logan.error(f"Critical error in perform_trade function for market {market} ({row.get('question', 'unknown question') if 'row' in locals() else 'unknown question'}): {ex}", namespace="trading", exception=ex)
+            Logan.error(f"Critical error in perform_trade function for market {market} ({row.get('question', 'unknown question') if 'row' in locals() else 'unknown question'}): {ex}", namespace="trading", exception=ex)  # type: ignore
 
         gc.collect()

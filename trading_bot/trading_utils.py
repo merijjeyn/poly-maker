@@ -1,5 +1,5 @@
 import math
-
+from typing import TypeVar, Optional
 import trading_bot.global_state as global_state
 
 def get_best_bid_ask_deets(token, size):

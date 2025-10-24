@@ -17,7 +17,6 @@ def test_configuration_values():
         config_tests = [
             ("ACTIVITY_LOOKBACK_DAYS", TCNF.ACTIVITY_LOOKBACK_DAYS, int),
             ("DECAY_HALF_LIFE_HOURS", TCNF.DECAY_HALF_LIFE_HOURS, int),
-            ("SPREAD_MULTIPLIER", TCNF.SPREAD_MULTIPLIER, float),
             ("MIN_TOTAL_VOLUME", TCNF.MIN_TOTAL_VOLUME, float),
             ("MIN_VOLUME_USD", TCNF.MIN_VOLUME_USD, float),
             ("MIN_DECAY_WEIGHTED_VOLUME", TCNF.MIN_DECAY_WEIGHTED_VOLUME, float),

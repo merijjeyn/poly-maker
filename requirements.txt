@@ -19,3 +19,5 @@ requests
 google-auth
 web3
 scipy
+ruff
+ty

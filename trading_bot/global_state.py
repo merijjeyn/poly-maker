@@ -33,16 +33,16 @@ order_book_data = {}
 df = cast(pd.DataFrame, Global[pd.DataFrame]())
 
 # Filtered markets after applying custom selection logic
-selected_markets_df = None
+selected_markets_df = cast(pd.DataFrame, Global[pd.DataFrame]())
 
-markets_with_positions = None
+markets_with_positions = cast(pd.DataFrame, Global[pd.DataFrame]())
 
 # Position sizing information for each market
 # Format: {condition_id: PositionSizeResult}
 market_trade_sizes = {}
 
 # Available cash liquidity for trading (USDC balance)
-available_liquidity: Optional[float] = None  
+available_liquidity: float = 0.0  
 
 # ============ Client & Parameters ============
 

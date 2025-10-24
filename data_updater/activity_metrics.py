@@ -374,10 +374,10 @@ def add_activity_metrics_to_market_data(market_row: Dict) -> Dict:
     """
     Add activity metrics to a single market data row.
     This calculates metrics for the entire market (both tokens combined).
-    
+
     Args:
         market_row: Dictionary containing market data
-        
+
     Returns:
         Market row enhanced with activity metrics
     """
@@ -385,14 +385,10 @@ def add_activity_metrics_to_market_data(market_row: Dict) -> Dict:
     token_id = market_row.get('token1') # either token will do. We just use this for the price history
     best_bid = market_row.get('best_bid', 0)
     best_ask = market_row.get('best_ask', 0)
-    
-    if not condition_id:
-        Logan.warn(
-            "No condition_id found in market row, skipping activity metrics",
-            namespace="data_updater.activity_metrics"
-        )
-        return market_row
-    
+
+    assert condition_id is not None, "condition_id must be present in market_row"
+    assert token_id is not None, "token_id must be present in market_row"
+
     # Calculate metrics for the entire market over configured lookback period
     activity_metrics = calculate_market_activity_metrics(condition_id, token_id, best_bid, best_ask)
     

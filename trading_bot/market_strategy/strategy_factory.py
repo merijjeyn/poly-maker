@@ -3,6 +3,7 @@ StrategyFactory manages the global market strategy instance used throughout the 
 """
 
 from enum import Enum
+from typing import Optional
 
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
@@ -15,7 +16,7 @@ class StrategyType(str, Enum):
 
 
 class StrategyFactory:
-    _instance: MarketStrategy = None
+    _instance: Optional[MarketStrategy] = None
     
     # Available strategies mapping
     _STRATEGIES = {

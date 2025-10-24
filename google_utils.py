@@ -171,7 +171,7 @@ class ReadOnlyWorksheet:
             )
             return []
         
-def get_sheet_df(read_only=None):
+def get_sheet_df(read_only=None) -> tuple[pd.DataFrame, dict]:
     """
     Get sheet data with optional read-only mode
     
@@ -202,7 +202,8 @@ def get_sheet_df(read_only=None):
     # Read directly from All Markets - no more filtering at read time
     wk = spreadsheet.worksheet(all)
     result = pd.DataFrame(wk.get_all_records())
-    result = result[result['question'] != ""].reset_index(drop=True)
+    
+    result = result.loc[result['question'] != "", :].reset_index(drop=True)
 
     wk_p = spreadsheet.worksheet('Hyperparameters')
     records = wk_p.get_all_records()
