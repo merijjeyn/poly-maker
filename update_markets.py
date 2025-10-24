@@ -6,7 +6,6 @@ from google_utils import get_spreadsheet
 from data_updater.find_markets import cleanup_all_markets, get_all_markets, get_all_markets_detailed
 from gspread_dataframe import set_with_dataframe
 from logan import Logan
-from configuration import TCNF
 
 # Initialize global variables
 load_dotenv()
@@ -111,7 +110,7 @@ if __name__ == "__main__":
             time.sleep(60 * 60)  # Sleep for an hour
         except Exception as e:
             Logan.error(
-                f"Error in market data update loop",
+                "Error in market data update loop",
                 namespace="update_markets",
                 exception=e
             )

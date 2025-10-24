@@ -9,7 +9,7 @@ import trading_bot.global_state as global_state
 from configuration import TCNF
 
 # Import utility functions for trading
-from trading_bot.orders_in_flight import get_orders_in_flight, set_order_in_flight
+from trading_bot.orders_in_flight import set_order_in_flight
 from trading_bot.market_strategy.strategy_factory import StrategyFactory
 from trading_bot.trading_utils import get_best_bid_ask_deets, round_down, round_up
 from trading_bot.data_utils import get_position, get_order, get_readable_from_condition_id, get_total_balance
@@ -359,7 +359,7 @@ async def perform_trade(market):
 
                         if current_time < start_trading_at:
                             send_buy = False
-                            Logan.info(f"Not sending a buy order because recently risked off. ", namespace="trading")
+                            Logan.info("Not sending a buy order because recently risked off. ", namespace="trading")
 
                     # Only proceed if we're not in risk-off period
                     if send_buy:

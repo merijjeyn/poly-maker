@@ -7,7 +7,7 @@ from logan import Logan
 
 
 from trading_bot.polymarket_client import PolymarketClient
-from trading_bot.data_utils import update_markets, update_positions, update_orders, update_liquidity, clear_all_orders
+from trading_bot.data_utils import update_markets, update_positions, update_orders, clear_all_orders
 from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
 import trading_bot.global_state as global_state
 from trading_bot.data_processing import remove_from_performing
@@ -43,7 +43,7 @@ def remove_from_pending():
                 except Exception as e:
                     Logan.error(f"Error removing stale trade {trade_id} from {col}", namespace="cleanup", exception=e)
     except Exception as e:
-        Logan.error(f"Error in remove_from_pending function while cleaning stale trades", namespace="cleanup", exception=e)
+        Logan.error("Error in remove_from_pending function while cleaning stale trades", namespace="cleanup", exception=e)
 
 def update_periodically():
     """

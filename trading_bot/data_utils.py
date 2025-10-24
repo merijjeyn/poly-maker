@@ -1,8 +1,6 @@
-import pandas as pd
 import trading_bot.global_state as global_state
 from google_utils import get_sheet_df
 import time
-import trading_bot.global_state as global_state
 from trading_bot.market_selection import calculate_position_sizes, filter_selected_markets
 from logan import Logan
 
@@ -70,7 +68,7 @@ def update_liquidity():
         global_state.available_liquidity = global_state.client.get_usdc_balance()
     except Exception as e:
         Logan.error(
-            f"Error updating liquidity",
+            "Error updating liquidity",
             namespace="poly_data.data_utils",
             exception=e
         )
@@ -101,7 +99,7 @@ def get_total_balance():
         return total
     except Exception as e:
         Logan.error(
-            f"Error calculating total balance",
+            "Error calculating total balance",
             namespace="poly_data.data_utils",
             exception=e
         )
@@ -198,7 +196,7 @@ def clear_all_orders():
             Logan.info("No existing orders to clear", namespace="poly_data.data_utils")
 
     except Exception as e:
-        Logan.error(f"Error clearing all orders", namespace="poly_data.data_utils", exception=e)
+        Logan.error("Error clearing all orders", namespace="poly_data.data_utils", exception=e)
 
 def update_orders():
     all_orders = global_state.client.get_all_orders()

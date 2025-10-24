@@ -39,7 +39,7 @@ def get_all_positions(client):
         return positions
     except Exception as e:
         Logan.error(
-            f"Error fetching all positions for account stats",
+            "Error fetching all positions for account stats",
             namespace="poly_stats.account_stats",
             exception=e
         )
@@ -81,7 +81,6 @@ def get_earnings(client):
     url = "https://polymarket.com/api/rewards/markets"
 
     cursor = ''
-    markets = []
 
     params = {
         "l2Headers": json.dumps(l2Headers),

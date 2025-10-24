@@ -17,9 +17,8 @@ Note: In Polymarket terminology:
 import pandas as pd
 import numpy as np
 import requests
-import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict
 from logan import Logan
 from configuration import TCNF
 from scipy import stats
@@ -37,8 +36,8 @@ def get_market_trades_data(condition_id: str) -> pd.DataFrame:
     """
     try:
         # Calculate timestamp for lookback period
-        end_time = int(datetime.now().timestamp())
-        start_time = int((datetime.now() - timedelta(days=TCNF.ACTIVITY_LOOKBACK_DAYS)).timestamp())
+        # end_time = int(datetime.now().timestamp())
+        # start_time = int((datetime.now() - timedelta(days=TCNF.ACTIVITY_LOOKBACK_DAYS)).timestamp())
         
         # Fetch trades from Polymarket Data API for the entire market (condition_id)
         url = "https://data-api.polymarket.com/trades"
@@ -314,7 +313,7 @@ def calculate_order_arrival_rate_sensitivity(trades_df: pd.DataFrame, price_df: 
         
     except Exception as e:
         Logan.error(
-            f"Error calculating order arrival rate sensitivity",
+            "Error calculating order arrival rate sensitivity",
             namespace="data_updater.activity_metrics",
             exception=e
         )

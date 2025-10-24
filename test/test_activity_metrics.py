@@ -32,8 +32,8 @@ def test_configuration_values():
         print("✓ Configuration test passed")
         return True
         
-    except Exception as e:
-        print(f"Configuration test failed")
+    except Exception:
+        print("Configuration test failed")
         return False
 
 def test_activity_metrics_imports():
@@ -42,12 +42,7 @@ def test_activity_metrics_imports():
     
     try:
         from data_updater.activity_metrics import (
-            get_market_trades_data,
-            calculate_volume_metrics,
-            calculate_trade_frequency,
-            calculate_unique_participants,
-            calculate_market_activity_metrics,
-            add_activity_metrics_to_market_data
+            calculate_market_activity_metrics
         )
         
         print("✓ All activity metrics functions imported successfully")
@@ -63,8 +58,8 @@ def test_activity_metrics_imports():
         
         return True
         
-    except Exception as e:
-        print(f"Import test failed")
+    except Exception:
+        print("Import test failed")
         return False
 
 def test_market_filtering_logic():
@@ -73,7 +68,6 @@ def test_market_filtering_logic():
     
     try:
         import pandas as pd
-        import numpy as np
         
         # Create test data
         test_data = pd.DataFrame([
@@ -119,8 +113,8 @@ def test_market_filtering_logic():
         print("✓ Filtering logic test passed")
         return True
         
-    except Exception as e:
-        print(f"Filtering logic test failed")
+    except Exception:
+        print("Filtering logic test failed")
         return False
 
 def main():

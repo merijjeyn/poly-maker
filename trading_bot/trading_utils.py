@@ -1,6 +1,5 @@
 import math
 
-from logan import Logan 
 import trading_bot.global_state as global_state
 
 def get_best_bid_ask_deets(token, size):

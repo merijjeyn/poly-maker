@@ -1,7 +1,6 @@
 from trading_bot.polymarket_client import PolymarketClient
 from poly_stats.account_stats import update_stats_once
 
-import pandas as pd
 import time
 from logan import Logan
 
@@ -13,7 +12,7 @@ if __name__ == '__main__':
             update_stats_once(client)
         except Exception as e:
             Logan.error(
-                f"Error updating account stats",
+                "Error updating account stats",
                 namespace="update_stats",
                 exception=e
             )

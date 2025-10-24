@@ -65,7 +65,7 @@ def test_activity_metrics_calculation():
         return True
         
     except Exception as e:
-        Logan.error(f"Activity metrics test failed", namespace="test_market_selection", exception=e)
+        Logan.error("Activity metrics test failed", namespace="test_market_selection", exception=e)
         return False
 
 def test_market_filtering():
@@ -100,7 +100,7 @@ def test_market_filtering():
         return True
         
     except Exception as e:
-        Logan.error(f"Market filtering test failed", namespace="test_market_selection", exception=e)
+        Logan.error("Market filtering test failed", namespace="test_market_selection", exception=e)
         return False
 
 def test_configuration_values():
@@ -108,18 +108,6 @@ def test_configuration_values():
     Logan.info("Testing configuration values...", namespace="test_market_selection")
     
     try:
-        # Test that all new config values are accessible
-        config_values = [
-            TCNF.ACTIVITY_LOOKBACK_DAYS,
-            TCNF.DECAY_HALF_LIFE_HOURS,
-            TCNF.SPREAD_MULTIPLIER,
-            TCNF.MIN_TOTAL_VOLUME,
-            TCNF.MIN_VOLUME_USD,
-            TCNF.MIN_DECAY_WEIGHTED_VOLUME,
-            TCNF.MIN_AVG_TRADES_PER_DAY,
-            TCNF.MIN_UNIQUE_TRADERS,
-        ]
-        
         Logan.info(f"Configuration values: ACTIVITY_LOOKBACK_DAYS={TCNF.ACTIVITY_LOOKBACK_DAYS}, "
                   f"MIN_TOTAL_VOLUME={TCNF.MIN_TOTAL_VOLUME}, "
                   f"MIN_UNIQUE_TRADERS={TCNF.MIN_UNIQUE_TRADERS}", 
@@ -129,7 +117,7 @@ def test_configuration_values():
         return True
         
     except Exception as e:
-        Logan.error(f"Configuration test failed", namespace="test_market_selection", exception=e)
+        Logan.error("Configuration test failed", namespace="test_market_selection", exception=e)
         return False
 
 def main():

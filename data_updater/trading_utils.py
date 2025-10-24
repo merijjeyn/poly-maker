@@ -1,7 +1,6 @@
 from py_clob_client.constants import POLYGON
 from py_clob_client.client import ClobClient
 from py_clob_client.clob_types import OrderArgs, BalanceAllowanceParams, AssetType
-from py_clob_client.order_builder.constants import BUY
 
 from web3 import Web3
 
@@ -100,7 +99,7 @@ def approveContracts():
         "nonce": nonce
     })
     signed_txn_2 = web3.eth.account.sign_transaction(raw_txn_2, private_key=os.getenv("PK"))
-    send_txn_2 = web3.eth.send_raw_transaction(signed_txn_2.rawTransaction)
+    web3.eth.send_raw_transaction(signed_txn_2.rawTransaction)
 
 
     nonce = web3.eth.getTransactionCount( wallet.address )
@@ -110,7 +109,7 @@ def approveContracts():
         "nonce": nonce
     })
     signed_txn_3 = web3.eth.account.sign_transaction(raw_txn_3, private_key=os.getenv("PK"))
-    send_txn_3 = web3.eth.send_raw_transaction(signed_txn_3.rawTransaction)
+    web3.eth.send_raw_transaction(signed_txn_3.rawTransaction)
     
     
 def market_action( marketId, action, price, size ):

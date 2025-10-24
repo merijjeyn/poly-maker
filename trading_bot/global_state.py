@@ -30,7 +30,7 @@ REVERSE_TOKENS = {}
 order_book_data = {}  
 
 # Market configuration data from Google Sheets
-df = None
+df = cast(pd.DataFrame, Global[pd.DataFrame]())
 
 # Filtered markets after applying custom selection logic
 selected_markets_df = None

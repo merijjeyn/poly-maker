@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Awaitable, Callable, Hashable
+from typing import Awaitable, Callable, Hashable
 
 from logan import Logan
 

@@ -50,7 +50,7 @@ async def connect_market_websocket(chunk):
                 )
             except Exception as e:
                 Logan.error(
-                    f"Unexpected error in market websocket connection",
+                    "Unexpected error in market websocket connection",
                     namespace="websocket_handlers",
                     exception=e
                 )
@@ -110,7 +110,7 @@ async def connect_user_websocket():
                 )
             except Exception as e:
                 Logan.error(
-                    f"Unexpected error in user websocket connection",
+                    "Unexpected error in user websocket connection",
                     namespace="websocket_handlers",
                     exception=e
                 )

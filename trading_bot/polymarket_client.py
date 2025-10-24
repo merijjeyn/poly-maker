@@ -3,17 +3,15 @@ import os                           # Operating system interface
 
 # Polymarket API client libraries
 from py_clob_client.client import ClobClient, OrderType
-from py_clob_client.clob_types import OrderArgs, BalanceAllowanceParams, AssetType, PartialCreateOrderOptions
+from py_clob_client.clob_types import OrderArgs, PartialCreateOrderOptions
 from py_clob_client.constants import POLYGON
 from configuration import TCNF
 
 # Web3 libraries for blockchain interaction
 from web3 import Web3
-from eth_account import Account
 
 import requests                     # HTTP requests
 import pandas as pd                 # Data analysis
-import json                         # JSON processing
 import subprocess                   # For calling external processes
 import shlex                        # For safely quoting shell arguments
 from logan import Logan
@@ -132,7 +130,7 @@ class PolymarketClient:
         signed_order = None
 
         # Handle regular vs negative risk markets differently
-        if neg_risk == False:
+        if not neg_risk:
             signed_order = self.client.create_order(order_args)
         else:
             signed_order = self.client.create_order(order_args, options=PartialCreateOrderOptions(neg_risk=True))

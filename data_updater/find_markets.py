@@ -3,6 +3,7 @@ import numpy as np
 import requests
 import time
 import warnings
+import concurrent.futures
 from logan import Logan
 
 from data_updater.activity_metrics import add_activity_metrics_to_market_data
@@ -78,13 +79,8 @@ def get_bid_ask_range(ret, TICK_SIZE):
 
 
 def generate_numbers(start, end, TICK_SIZE):
-    # Calculate the starting point, rounding up to the next hundredth if not an exact multiple of TICK_SIZE
     rounded_start = (int(start * 100) + 1) / 100 if start * 100 % 1 != 0 else start + TICK_SIZE
     
-    # Calculate the ending point, rounding down to the nearest hundredth
-    rounded_end = int(end * 100) / 100
-    
-    # Generate numbers from rounded_start to rounded_end, ensuring they fall strictly within the original bounds
     numbers = []
     current = rounded_start
     while current < end:
@@ -225,12 +221,12 @@ def process_market_row(row, client):
 
     try:
         bids = pd.DataFrame(book.bids).astype(float)
-    except Exception as e:
+    except Exception:
         raise ValueError(f"Error processing bids for token {token1}")
 
     try:
         asks = pd.DataFrame(book.asks).astype(float)
-    except Exception as e:
+    except Exception:
         raise ValueError(f"Error processing asks for token {token1}")
 
     ret['best_bid'] = bids.iloc[-1]['price'] if not bids.empty else 0
@@ -399,9 +395,6 @@ def get_all_markets_detailed(all_df: pd.DataFrame, client, max_workers=3, batch_
                 time.sleep(remaining)
 
     return pd.DataFrame(all_results)
-
-
-import concurrent.futures
 
 def calculate_annualized_volatility(df, hours):
     end_time = df['t'].max()

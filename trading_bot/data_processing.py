@@ -1,4 +1,3 @@
-import json
 from sortedcontainers import SortedDict
 import trading_bot.global_state as global_state
 
@@ -186,7 +185,7 @@ async def process_user_data(rows):
                 
                 try: 
                     order_size = global_state.orders[token][side]['size'] # size of existing orders
-                except Exception as e:
+                except Exception:
                     order_size = 0
 
                 if row['type'] == 'PLACEMENT':
