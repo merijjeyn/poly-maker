@@ -105,12 +105,12 @@ class PolymarketClient:
         self.env_path = env_path
 
     
-    def create_order(self, marketId, action, price, size, neg_risk=False):
+    def create_order(self, token, action, price, size, neg_risk=False):
         """
         Create and submit a new order to the Polymarket order book.
         
         Args:
-            marketId (str): ID of the market token to trade
+            token (str): ID of the market token to trade
             action (str): "BUY" or "SELL"
             price (float): Order price (0-1 range for prediction markets)
             size (float): Order size in USDC
@@ -123,7 +123,7 @@ class PolymarketClient:
 
         # Create order parameters
         order_args = OrderArgs(
-            token_id=str(marketId),
+            token_id=str(token),
             price=price,
             size=size,
             side=action,
@@ -144,7 +144,7 @@ class PolymarketClient:
             return resp
         except Exception as ex:
             Logan.error(
-                f"Error posting order for market \"{get_readable_from_token_id(marketId)}\" ({action} {size} @ {price}): {ex}",
+                f"Error posting order for market \"{get_readable_from_token_id(token)}\" ({action} {size} @ {price}): {ex}",
                  namespace="poly_data.polymarket_client",
                 exception=ex
             )
