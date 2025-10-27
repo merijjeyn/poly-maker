@@ -27,7 +27,7 @@ class TradingConfig:
     # Market selection and investment parameters
     INVESTMENT_CEILING = 2000
     MAX_POSITION_MULT = 3
-    BUDGET_MULT = 1.5
+    BUDGET_MULT = 2
     MARKET_COUNT = 20
     
     # Risk management thresholds

@@ -24,10 +24,16 @@ class AnSMarketStrategy(MarketStrategy):
             sell_amount = position
 
         # Ensure minimum order size compliance
-        if buy_amount > 0.7 * row['min_size'] and buy_amount < row['min_size']:
-            buy_amount = row['min_size']
-        if sell_amount > 0.7 * row['min_size'] and sell_amount < row['min_size']:
-            sell_amount = row['min_size']
+        if buy_amount < row['min_size']:
+            if buy_amount > 0.7 * row['min_size']: 
+                buy_amount = row['min_size']
+            else: 
+                buy_amount = 0
+        if sell_amount < row['min_size']:
+            if sell_amount > 0.7 * row['min_size']: 
+                sell_amount = row['min_size']
+            else: 
+                sell_amount = 0
 
         # if we are selling more than we have;
         if sell_amount > position:
