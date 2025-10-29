@@ -118,18 +118,18 @@ def handle_create_order_response(resp, order):
         Logan.error(f"Error creating order for token: {order['token']}", namespace="trading")
         
         # TODO: some markets cause an issue. Fix it and clean up here.
-        market = order['market']
-        fname = 'positions/' + str(market) + '.json'
+        # market = order['market']
+        # fname = 'positions/' + str(market) + '.json'
         
-        risk_details = {
-            'time': str(pd.Timestamp.utcnow().tz_localize(None)),
-            'question': order.get('row', {}).get('question', 'unknown'),
-            'msg': f"Error creating {order.get('side', 'unknown')} order for token {order['token']}. Response: {resp}",
-            'sleep_till': str(pd.Timestamp.utcnow().tz_localize(None) + pd.Timedelta(hours=2))
-        }
+        # risk_details = {
+        #     'time': str(pd.Timestamp.utcnow().tz_localize(None)),
+        #     'question': order.get('row', {}).get('question', 'unknown'),
+        #     'msg': f"Error creating {order.get('side', 'unknown')} order for token {order['token']}. Response: {resp}",
+        #     'sleep_till': str(pd.Timestamp.utcnow().tz_localize(None) + pd.Timedelta(hours=2))
+        # }
         
-        open(fname, 'w').write(json.dumps(risk_details))
-        Logan.info(f"Market {market} will not be traded until {risk_details['sleep_till']}", namespace="trading")
+        # open(fname, 'w').write(json.dumps(risk_details))
+        # Logan.info(f"Market {market} will not be traded until {risk_details['sleep_till']}", namespace="trading")
 
 
 # Dictionary to store locks for each market to prevent concurrent trading on the same market
