@@ -23,8 +23,14 @@ class GLFTMarketStrategy(MarketStrategy):
         bid_price, ask_price = AnSMarketStrategy.get_order_prices(best_bid, best_ask, mid_price, row, token, tick, force_sell)
 
         reward_rate = row['rewards_daily_rate']
+
+        # TODO: i don't love this normalized calculation because it is affected by market selection, but it works for now.
         competition = cls.calculate_normalized_competition_of_market(row)
         trade_feq = cls.calculate_normalized_trade_feq_of_market(row)
+        order_depth = cls.calculate_normalized_order_book_depth_of_market(row)
+
+        bid_price = bid_price - (TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR / order_depth)
+        ask_price = ask_price + (TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR / order_depth)
 
         if competition == 0 or trade_feq == 0:
             skew = 0
@@ -41,6 +47,9 @@ class GLFTMarketStrategy(MarketStrategy):
         if inside_max_reward_spread:
             bid_price, ask_price = new_bid_price, new_ask_price
         
+
+        # TODO: Implement toxicity filter. if price changed recently, increase spread for a while.
+
         bid_price, ask_price = cls.apply_safety_guards(bid_price, ask_price, mid_price, tick, best_bid, best_ask, force_sell)
         # Logan.debug(f"result of GLFT: bid_price: {bid_price}, ask_price: {ask_price}, force_sell: {force_sell}, best_bid: {best_bid}, best_ask: {best_ask}, mid_price: {mid_price}, reward skew: {skew}, token: {token}", namespace="poly_data.market_strategy.glft_strategy")
         return bid_price, ask_price
@@ -64,3 +73,10 @@ class GLFTMarketStrategy(MarketStrategy):
         avg_trade_feq = markets['avg_trades_per_day'].mean()
 
         return trade_feq / avg_trade_feq
+    
+    @classmethod
+    def calculate_normalized_order_book_depth_of_market(cls, row):
+        markets = get_active_markets()
+        depth = row['depth_yes_in'] + row['depth_no_in']
+        avg_depth = markets['depth_yes_in'].mean() + markets['depth_no_in'].mean()
+        return depth / avg_depth

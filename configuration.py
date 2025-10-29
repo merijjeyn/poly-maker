@@ -31,7 +31,7 @@ class TradingConfig:
     MARKET_COUNT = 20
     
     # Risk management thresholds
-    MAX_VOLATILITY_SUM = 14.0
+    MAX_VOLATILITY_SUM = 16.0
     MIN_ATTRACTIVENESS_SCORE = 0.0
     MARKET_IMBALANCE_CALC_PCT = 0.3 # percentage of midpoint to include in imbalance calculation
     MARKET_IMBALANCE_CALC_LEVELS = 5 # number of price levels to include in imbalance calculation
@@ -49,12 +49,13 @@ class TradingConfig:
     MIN_UNIQUE_TRADERS = 5  # Minimum number of unique traders
 
     # Market strategy parameters
-    RISK_AVERSION = 0.4
+    RISK_AVERSION = 0.8
     TIME_TO_HORIZON_HOURS = 24
     ARRIVAL_RATE_BIN_SIZE = 0.01
     MIN_ARRIVAL_RATE_SENSITIVITY = 1.0
     MAX_ARRIVAL_RATE_SENSITIVITY = 80.0
-    REWARD_SKEW_FACTOR = 0.1
+    REWARD_SKEW_FACTOR = 0.12
+    ORDER_BOOK_DEPTH_SKEW_FACTOR = 0.005
 
     
 
