@@ -62,7 +62,7 @@ async def process_data(json_datas, trade=True):
             process_book_data(token, json_data)
 
             if trade:
-                await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                await Scheduler.schedule_task(market, perform_trade)
                 
                 
         elif event_type == 'price_change':
@@ -74,7 +74,7 @@ async def process_data(json_datas, trade=True):
                 process_price_change(token, side, price_level, new_size)
 
                 if trade:
-                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                    await Scheduler.schedule_task(market, perform_trade)
 
 def add_to_performing(col, id):
     if col not in global_state.performing:
@@ -160,7 +160,7 @@ async def process_user_data(rows):
                         f"Confirmed. Performing is {len(global_state.performing[col])}",
                         namespace="poly_data.data_processing"
                     )
-                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                    await Scheduler.schedule_task(market, perform_trade)
                 elif row['status'] == 'MATCHED':
                     add_to_performing(col, row['id'])
 
@@ -173,7 +173,7 @@ async def process_user_data(rows):
                         f"Position after matching is {global_state.positions[str(token)]}",
                         namespace="poly_data.data_processing"
                     )
-                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                    await Scheduler.schedule_task(market, perform_trade)
                 elif row['status'] == 'MINED':
                     remove_from_performing(col, row['id'])
 
@@ -199,5 +199,5 @@ async def process_user_data(rows):
                 clear_order_in_flight(row['id'])
                 
                 if (row['type'] != 'PLACEMENT'): 
-                    await Scheduler.schedule_task(market, lambda: perform_trade(market))
+                    await Scheduler.schedule_task(market, perform_trade)
 

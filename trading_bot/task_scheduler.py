@@ -11,11 +11,11 @@ class TaskScheduler:
         self._lock = asyncio.Lock()
         self._inflight: set[Hashable] = set()
 
-    async def schedule_task(self, market: str, task: Callable[[], Awaitable[None]]) -> None:
-        async with self._lock:
-            if market in self._inflight:
-                return
+    async def schedule_task(self, market: str, task: Callable[[str], Awaitable[None]]) -> None:
+        if market in self._inflight:
+            return
             
+        async with self._lock:
             orders_in_flight = get_orders_in_flight(market)
             if len(orders_in_flight) > 0:
                 return
@@ -24,7 +24,7 @@ class TaskScheduler:
 
             async def run_task():
                 try:
-                    await task()
+                    await task(market)
                 except Exception as e:
                     Logan.error(f"Error running task for market {market}", namespace="task_scheduler", exception=e)
                 finally:
