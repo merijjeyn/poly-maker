@@ -7,7 +7,8 @@ from logan import Logan
 
 
 from trading_bot.polymarket_client import PolymarketClient
-from trading_bot.data_utils import update_markets, update_positions, update_orders, clear_all_orders
+from trading_bot.data_utils import update_positions, update_orders, clear_all_orders
+from trading_bot.market_manager import update_markets
 from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
 import trading_bot.global_state as global_state
 from trading_bot.data_processing import remove_from_performing

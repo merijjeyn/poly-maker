@@ -28,10 +28,10 @@ class TradingConfig:
     INVESTMENT_CEILING = 2000
     MAX_POSITION_MULT = 3
     BUDGET_MULT = 2
-    MARKET_COUNT = 20
+    MARKET_COUNT = 15
     
     # Risk management thresholds
-    MAX_VOLATILITY_SUM = 30.0
+    MAX_VOLATILITY_SUM = 40.0
     MIN_ATTRACTIVENESS_SCORE = 0.0
     MARKET_IMBALANCE_CALC_PCT = 0.3 # percentage of midpoint to include in imbalance calculation
     MARKET_IMBALANCE_CALC_LEVELS = 5 # number of price levels to include in imbalance calculation

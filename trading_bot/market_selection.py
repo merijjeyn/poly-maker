@@ -17,6 +17,7 @@ from logan import Logan
 from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 from configuration import TCNF
+from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
 
 @dataclass
 class PositionSizeResult:
@@ -30,6 +31,80 @@ class Position:
     """Represents a trading position"""
     size: float
     avgPrice: float
+
+
+def check_strategy_prices_within_spread(row: pd.Series) -> bool:
+    """
+    Check if the strategy's calculated bid/ask prices are within acceptable range of mid_price.
+    Uses the strategy's get_order_prices API directly, making it work with any strategy.
+    
+    Args:
+        row: Market data row containing best_bid, best_ask, tick_size, max_spread, etc.
+        
+    Returns:
+        True if both bid_price and ask_price are within mid_price +- max_spread/2, False otherwise
+    """
+    try:
+        best_bid = float(row['best_bid'])
+        best_ask = float(row['best_ask'])
+        tick = float(row['tick_size'])
+        max_spread = float(row['max_spread']) / 100  # Convert from percentage to decimal
+        
+        mid_price = (best_bid + best_ask) / 2
+        
+        bid_price, ask_price = AnSMarketStrategy.get_order_prices(
+            best_bid=best_bid,
+            best_ask=best_ask,
+            mid_price=mid_price,
+            row=row,
+            token=None,
+            tick=tick,
+            force_sell=False
+        )
+        
+        # Check if both prices are within mid_price +- max_spread
+        lower_bound = mid_price - max_spread
+        upper_bound = mid_price + max_spread
+        
+        bid_within_range = bid_price >= lower_bound and bid_price <= upper_bound
+        ask_within_range = ask_price >= lower_bound and ask_price <= upper_bound
+        # Logan.debug(f"bid_within_range: {bid_within_range}, ask_within_range: {ask_within_range}, bid_price: {bid_price}, ask_price: {ask_price}, mid_price: {mid_price}, max_spread: {max_spread}", namespace="poly_data.market_selection")
+        return bid_within_range and ask_within_range
+        
+    except Exception as e:
+        Logan.warn(
+            f"Failed to check strategy prices for market: {e}",
+            namespace="poly_data.market_selection"
+        )
+        return False
+
+
+def filter_markets_by_strategy_spread(df: pd.DataFrame, initial_count: int) -> pd.DataFrame:
+    """
+    Filter markets based on whether the strategy's calculated bid/ask prices are within acceptable range.
+    Checks if both bid_price and ask_price are within mid_price +- max_spread/2.
+    Works with any strategy configured via StrategyFactory.
+    
+    Args:
+        df: DataFrame of markets to filter
+        initial_count: Initial count of markets before all filters (for logging)
+        
+    Returns:
+        Filtered DataFrame
+    """
+    if len(df) == 0:
+        return df
+    
+    # Check if strategy prices are within acceptable range for each market
+    df['prices_within_range'] = df.apply(check_strategy_prices_within_spread, axis=1)
+    
+    # Filter to keep only markets where prices are within range
+    df_filtered = df[df['prices_within_range'] == True].copy()
+    
+    # Clean up temporary column
+    df_filtered = df_filtered.drop(columns=['prices_within_range'])
+
+    return df_filtered
 
 
 def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
@@ -130,17 +205,6 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
             namespace="poly_data.market_selection"
         )
         
-        # Filter by minimum USD volume
-        if 'volume_usd' in df.columns:
-            df = df[df['volume_usd'].fillna(0) >= TCNF.MIN_VOLUME_USD]
-            avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
-            avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
-            Logan.info(
-                f"After USD volume filter (≥{TCNF.MIN_VOLUME_USD}): {len(df)}/{initial_count} markets "
-                f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
-                namespace="poly_data.market_selection"
-            )
-        
         # Filter by minimum decay-weighted volume
         if 'decay_weighted_volume' in df.columns:
             df = df[df['decay_weighted_volume'].fillna(0) >= TCNF.MIN_DECAY_WEIGHTED_VOLUME]
@@ -163,27 +227,27 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
                 namespace="poly_data.market_selection"
             )
         
-        # Filter by minimum unique traders
-        if 'unique_traders' in df.columns:
-            df = df[df['unique_traders'].fillna(0) >= TCNF.MIN_UNIQUE_TRADERS]
-            avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
-            avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
-            Logan.info(
-                f"After unique traders filter (≥{TCNF.MIN_UNIQUE_TRADERS}): {len(df)}/{initial_count} markets "
-                f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
-                namespace="poly_data.market_selection"
-            )
+        # # Filter by minimum unique traders
+        # if 'unique_traders' in df.columns:
+        #     df = df[df['unique_traders'].fillna(0) >= TCNF.MIN_UNIQUE_TRADERS]
+        #     avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
+        #     avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
+        #     Logan.info(
+        #         f"After unique traders filter (≥{TCNF.MIN_UNIQUE_TRADERS}): {len(df)}/{initial_count} markets "
+        #         f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
+        #         namespace="poly_data.market_selection"
+        #     )
         
-        if 'order_arrival_rate_sensitivity' in df.columns:
-            df = df[df['order_arrival_rate_sensitivity'].fillna(0) >= TCNF.MIN_ARRIVAL_RATE_SENSITIVITY]
-            df = df[df['order_arrival_rate_sensitivity'].fillna(0) <= TCNF.MAX_ARRIVAL_RATE_SENSITIVITY]
-            avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
-            avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
-            Logan.info(
-                f"After arrival rate sensitivity filter ({TCNF.MIN_ARRIVAL_RATE_SENSITIVITY} ≤ k ≤ {TCNF.MAX_ARRIVAL_RATE_SENSITIVITY}): {len(df)}/{initial_count} markets "
-                f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
-                namespace="poly_data.market_selection"
-            )
+        # if 'order_arrival_rate_sensitivity' in df.columns:
+        #     df = df[df['order_arrival_rate_sensitivity'].fillna(0) >= TCNF.MIN_ARRIVAL_RATE_SENSITIVITY]
+        #     df = df[df['order_arrival_rate_sensitivity'].fillna(0) <= TCNF.MAX_ARRIVAL_RATE_SENSITIVITY]
+        #     avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
+        #     avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
+        #     Logan.info(
+        #         f"After arrival rate sensitivity filter ({TCNF.MIN_ARRIVAL_RATE_SENSITIVITY} ≤ k ≤ {TCNF.MAX_ARRIVAL_RATE_SENSITIVITY}): {len(df)}/{initial_count} markets "
+        #         f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
+        #         namespace="poly_data.market_selection"
+        #     )
         
         
         avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
@@ -198,6 +262,16 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
             "Activity metrics not found in data, skipping activity-based filtering",
             namespace="poly_data.market_selection"
         )
+
+    # 4. Run the strategy on the market, and filter out markets where the calculated bid/ask spread exceeds max spread
+    df = filter_markets_by_strategy_spread(df, initial_count)
+    avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
+    avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
+    Logan.info(
+        f"Filtered out markets where calculated prices are outside the max spread: {len(df)}/{initial_count} markets remaining "
+        f"(avg attractiveness: {avg_attractiveness:.2f}, avg GM reward: {avg_gm_reward:.2f})",
+        namespace="poly_data.market_selection"
+    )
     
     # 5. Sort by attractiveness score and take top N
     df_sorted = df.sort_values(by='attractiveness_score', ascending=False, na_position='last')
