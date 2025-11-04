@@ -194,6 +194,8 @@ async def process_user_data(rows):
                     order_size -= float(row['size_matched'])
                 elif row['type'] == 'CANCELLATION':
                     order_size -= float(row['original_size'])
+                
+                order_size = max(order_size, 0)
 
                 set_order(token, side, order_size, row['price'])
                 clear_order_in_flight(row['id'])
