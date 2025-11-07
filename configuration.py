@@ -49,13 +49,13 @@ class TradingConfig:
     MIN_UNIQUE_TRADERS = 5  # Minimum number of unique traders
 
     # Market strategy parameters
-    RISK_AVERSION = 0.65
+    RISK_AVERSION = 0.7
     TIME_TO_HORIZON_HOURS = 24
     ARRIVAL_RATE_BIN_SIZE = 0.01
     MIN_ARRIVAL_RATE_SENSITIVITY = 1.0
     MAX_ARRIVAL_RATE_SENSITIVITY = 80.0
     REWARD_SKEW_FACTOR = 0.15
-    ORDER_BOOK_DEPTH_SKEW_FACTOR = 0.0015
+    ORDER_BOOK_DEPTH_SKEW_FACTOR = 0.0005
 
     
 

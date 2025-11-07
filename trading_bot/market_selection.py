@@ -62,9 +62,9 @@ def check_strategy_prices_within_spread(row: pd.Series) -> bool:
             force_sell=False
         )
         
-        # Check if both prices are within mid_price +- max_spread
-        lower_bound = mid_price - max_spread
-        upper_bound = mid_price + max_spread
+        # Check if both prices are within mid_price +- max_spread -> tick is temporary buffer for glft
+        lower_bound = mid_price - max_spread + (2*tick)
+        upper_bound = mid_price + max_spread - (2*tick)
         
         bid_within_range = bid_price >= lower_bound and bid_price <= upper_bound
         ask_within_range = ask_price >= lower_bound and ask_price <= upper_bound
@@ -72,9 +72,10 @@ def check_strategy_prices_within_spread(row: pd.Series) -> bool:
         return bid_within_range and ask_within_range
         
     except Exception as e:
-        Logan.warn(
-            f"Failed to check strategy prices for market: {e}",
-            namespace="poly_data.market_selection"
+        Logan.error(
+            f"Failed to check strategy prices for market: {row['condition_id']}",
+            namespace="poly_data.market_selection",
+            exception=e
         )
         return False
 
