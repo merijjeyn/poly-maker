@@ -56,12 +56,12 @@ class GLFTMarketStrategy(MarketStrategy):
 
     @classmethod
     def calculate_normalized_competition_of_market(cls, row):
-        depth = row['depth_yes_in'] + row['depth_no_in']
+        depth = row['depth_bids'] + row['depth_asks']
 
         markets = get_active_markets()
-        avg_depth_yes_in = markets['depth_yes_in'].mean()
-        avg_depth_no_in = markets['depth_no_in'].mean()
-        avg_depth = (avg_depth_yes_in + avg_depth_no_in) / 2
+        avg_depth_bids = markets['depth_bids'].mean()
+        avg_depth_asks = markets['depth_asks'].mean()
+        avg_depth = (avg_depth_bids + avg_depth_asks) / 2
 
         return depth / avg_depth
     
@@ -77,6 +77,6 @@ class GLFTMarketStrategy(MarketStrategy):
     @classmethod
     def calculate_normalized_order_book_depth_of_market(cls, row):
         markets = get_active_markets()
-        depth = row['depth_yes_in'] + row['depth_no_in']
-        avg_depth = markets['depth_yes_in'].mean() + markets['depth_no_in'].mean()
+        depth = row['depth_bids'] + row['depth_asks']
+        avg_depth = markets['depth_bids'].mean() + markets['depth_asks'].mean()
         return depth / avg_depth

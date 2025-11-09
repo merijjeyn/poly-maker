@@ -104,40 +104,58 @@ def calculate_reward_per_100(curr_df, midpoint, max_spread, daily_reward):
     curr_df['reward_per_100'] = (curr_df['Q'] / curr_df['Q'].sum()) * daily_reward / 2 / curr_df['size'] * curr_df['100']
     return curr_df
 
-def calculate_market_depth(bids_df, asks_df, midpoint, max_spread):
-    max_spread_usd = round((max_spread / 100), 2)
-    """Calculate depth_yes_in and depth_no_in based on midpoint and s_max"""
-    depth_yes_in = 0
-    depth_no_in = 0
+def calculate_market_depth(bids_df, asks_df, midpoint):
+    """Calculate depth_bids and depth_asks using hybrid level/percentage approach"""
+    depth_bids = 0
+    depth_asks = 0
     
-    # Calculate price ranges
-    price_low_yes = midpoint - max_spread_usd
-    price_high_yes = midpoint
-    price_low_no = midpoint
-    price_high_no = midpoint + max_spread_usd
+    # Calculate window for YES side (bids below midpoint)
+    # Level-based window
+    bids_sorted = bids_df[bids_df['price'] <= midpoint].sort_values('price', ascending=False)
+    level_window_lower_yes = bids_sorted['price'].head(TCNF.MARKET_DEPTH_CALC_LEVELS).min() if not bids_sorted.empty else midpoint
     
-    # Sum yes bids within range [mid - s_max, mid]
+    # Percentage-based window
+    spread_size = min(midpoint, 1-midpoint) * TCNF.MARKET_DEPTH_CALC_PCT
+    pct_window_lower_yes = midpoint - spread_size
+    
+    # Take the intersection (max of lower bounds, midpoint as upper bound)
+    window_lower_yes = max(level_window_lower_yes, pct_window_lower_yes)
+    window_upper_yes = midpoint
+    
+    # Calculate depth_bids
     if not bids_df.empty:
-        filtered_bids = bids_df[(bids_df['price'] >= price_low_yes) & (bids_df['price'] <= price_high_yes)]
-        depth_yes_in = filtered_bids['size'].sum()
+        filtered_bids = bids_df[(bids_df['price'] >= window_lower_yes) & (bids_df['price'] <= window_upper_yes)]
+        depth_bids = filtered_bids['size'].sum()
     
-    # Sum no asks within range [mid, mid + s_max]
+    # Calculate window for NO side (asks above midpoint)
+    # Level-based window
+    asks_sorted = asks_df[asks_df['price'] >= midpoint].sort_values('price', ascending=True)
+    level_window_upper_no = asks_sorted['price'].head(TCNF.MARKET_DEPTH_CALC_LEVELS).max() if not asks_sorted.empty else midpoint
+    
+    # Percentage-based window
+    pct_window_upper_no = midpoint + spread_size
+    
+    # Take the intersection (midpoint as lower bound, min of upper bounds)
+    window_lower_no = midpoint
+    window_upper_no = min(level_window_upper_no, pct_window_upper_no)
+    
+    # Calculate depth_asks
     if not asks_df.empty:
-        filtered_asks = asks_df[(asks_df['price'] >= price_low_no) & (asks_df['price'] <= price_high_no)]
-        depth_no_in = filtered_asks['size'].sum()
+        filtered_asks = asks_df[(asks_df['price'] >= window_lower_no) & (asks_df['price'] <= window_upper_no)]
+        depth_asks = filtered_asks['size'].sum()
     
-    return depth_yes_in, depth_no_in
+    return depth_bids, depth_asks
 
 def calculate_market_imbalance(bids_df, asks_df, midpoint):
     # The window to look for imbalance is the hybrid of fixed number of price levels,
     # and a fixed spread size calculated from the percentage of midpoint
     bids_sorted = bids_df[bids_df['price'] <= midpoint].sort_values('price', ascending=False)
-    level_window_lower = bids_sorted['price'].head(TCNF.MARKET_IMBALANCE_CALC_LEVELS).min() if not bids_sorted.empty else midpoint
+    level_window_lower = bids_sorted['price'].head(TCNF.MARKET_DEPTH_CALC_LEVELS).min() if not bids_sorted.empty else midpoint
 
     asks_sorted = asks_df[asks_df['price'] >= midpoint].sort_values('price', ascending=True)
-    level_window_upper = asks_sorted['price'].head(TCNF.MARKET_IMBALANCE_CALC_LEVELS).max() if not asks_sorted.empty else midpoint
+    level_window_upper = asks_sorted['price'].head(TCNF.MARKET_DEPTH_CALC_LEVELS).max() if not asks_sorted.empty else midpoint
 
-    spread_size = min(midpoint, 1-midpoint) * TCNF.MARKET_IMBALANCE_CALC_PCT
+    spread_size = min(midpoint, 1-midpoint) * TCNF.MARKET_DEPTH_CALC_PCT
     pct_window_lower = midpoint - spread_size/2
     pct_window_upper = midpoint + spread_size/2
 
@@ -154,7 +172,7 @@ def calculate_market_imbalance(bids_df, asks_df, midpoint):
     
 
 def calculate_attractiveness_score(rewards_daily_rate, spread, max_spread, tick_size, midpoint, 
-                                 depth_yes_in, depth_no_in, volatility=None, 
+                                 depth_bids, depth_asks, volatility=None, 
                                  in_game_multiplier=1.0, plan_two_sided=True, alpha=0.1):
     """Calculate attractiveness score based on market conditions and strategy"""
     max_spread_usd = round((max_spread / 100), 2)
@@ -176,7 +194,7 @@ def calculate_attractiveness_score(rewards_daily_rate, spread, max_spread, tick_
     
     # 3) Competition inside the reward zone
     sample_investment = 100
-    D = max(sample_investment, depth_yes_in + depth_no_in)
+    D = max(sample_investment, depth_bids + depth_asks)
     competition_factor = sample_investment / D
     
     # 4) Risk/friction penalty
@@ -297,9 +315,9 @@ def process_market_row(row, client):
     ret['gm_reward_per_100'] = round((best_bid_reward * best_ask_reward) ** 0.5, 2)
     
     # Calculate market depth within reward zone
-    depth_yes_in, depth_no_in = calculate_market_depth(bids, asks, ret['midpoint'], ret['max_spread'])
-    ret['depth_yes_in'] = depth_yes_in
-    ret['depth_no_in'] = depth_no_in
+    depth_bids, depth_asks = calculate_market_depth(bids, asks, ret['midpoint'])
+    ret['depth_bids'] = depth_bids
+    ret['depth_asks'] = depth_asks
 
     # Calculate attractiveness score
     ret['spread'] = abs(ret['best_ask'] - ret['best_bid'])
@@ -309,8 +327,8 @@ def process_market_row(row, client):
         max_spread=ret['max_spread'],
         tick_size=TICK_SIZE,
         midpoint=ret['midpoint'],
-        depth_yes_in=depth_yes_in,
-        depth_no_in=depth_no_in
+        depth_bids=depth_bids,
+        depth_asks=depth_asks
     )
 
     ret['market_order_imbalance'] = calculate_market_imbalance(bids_df, asks_df, ret['midpoint'])
@@ -441,7 +459,7 @@ def cleanup_all_markets(df: pd.DataFrame) -> pd.DataFrame:
     first_columns = [
         'question', 'answer1', 'answer2', 'attractiveness_score', 'spread', 'market_order_imbalance', 'rewards_daily_rate', 
         'gm_reward_per_100', 'sm_reward_per_100', 'bid_reward_per_100', 'ask_reward_per_100', 'min_size', 'max_spread', 
-        'tick_size', 'market_slug', 'depth_yes_in', 'depth_no_in', 'condition_id', 'token1', 'token2'
+        'tick_size', 'market_slug', 'depth_bids', 'depth_asks', 'condition_id', 'token1', 'token2'
     ]
     first_columns_in_df = [col for col in first_columns if col in df.columns]
     extra_columns = [col for col in df.columns if col not in first_columns_in_df]

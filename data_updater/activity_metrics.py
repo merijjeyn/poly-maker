@@ -239,6 +239,73 @@ def calculate_unique_participants(trades_df: pd.DataFrame) -> Dict[str, int]:
     }
 
 
+def calculate_trade_size_metrics(trades_df: pd.DataFrame) -> Dict[str, float]:
+    """
+    Calculate trade size statistics for the last 24 hours.
+    
+    Args:
+        trades_df: DataFrame with trade data including timestamps and sizes
+        
+    Returns:
+        Dictionary with trade size metrics (average and percentiles)
+    """
+    if trades_df.empty:
+        return {
+            'avg_trade_size': 0.0,
+            'p50_trade_size': 0.0,
+            'p75_trade_size': 0.0,
+            'p90_trade_size': 0.0,
+            'p99_trade_size': 0.0
+        }
+    
+    try:
+        # Filter trades from the last 24 hours
+        current_time = datetime.now()
+        one_day_ago = current_time - timedelta(days=1)
+        recent_trades = trades_df[trades_df['match_time'] >= one_day_ago]
+        
+        if recent_trades.empty:
+            return {
+                'avg_trade_size': 0.0,
+                'p50_trade_size': 0.0,
+                'p75_trade_size': 0.0,
+                'p90_trade_size': 0.0,
+                'p99_trade_size': 0.0
+            }
+        
+        # Calculate average trade size
+        sizes = np.array(recent_trades['size'].tolist())
+        avg_trade_size = float(np.mean(sizes))
+        
+        # Calculate percentiles
+        p50_trade_size = float(np.percentile(sizes, 50))
+        p75_trade_size = float(np.percentile(sizes, 75))
+        p90_trade_size = float(np.percentile(sizes, 90))
+        p99_trade_size = float(np.percentile(sizes, 99))
+        
+        return {
+            'avg_trade_size': round(avg_trade_size, 2),
+            'p50_trade_size': round(p50_trade_size, 2),
+            'p75_trade_size': round(p75_trade_size, 2),
+            'p90_trade_size': round(p90_trade_size, 2),
+            'p99_trade_size': round(p99_trade_size, 2)
+        }
+        
+    except Exception as e:
+        Logan.error(
+            "Error calculating trade size metrics",
+            namespace="data_updater.activity_metrics",
+            exception=e
+        )
+        return {
+            'avg_trade_size': 0.0,
+            'p50_trade_size': 0.0,
+            'p75_trade_size': 0.0,
+            'p90_trade_size': 0.0,
+            'p99_trade_size': 0.0
+        }
+
+
 def calculate_order_arrival_rate_sensitivity(trades_df: pd.DataFrame, price_df: pd.DataFrame, price_df_token_id: str) -> float:
     """
     Calculate order arrival rate sensitivity (k parameter) from Avellaneda-Stoikov model.
@@ -350,12 +417,14 @@ def calculate_market_activity_metrics(condition_id: str, token_id: str, best_bid
         frequency_metrics = calculate_trade_frequency(trades_df)
         participant_metrics = calculate_unique_participants(trades_df)
         arrival_rate_sensitivity = calculate_order_arrival_rate_sensitivity(trades_df, price_df, token_id)
+        trade_size_metrics = calculate_trade_size_metrics(trades_df)
         
         # Combine all metrics
         all_metrics = {
             **volume_metrics,
             **frequency_metrics,
             **participant_metrics,
+            **trade_size_metrics,
             'order_arrival_rate_sensitivity': arrival_rate_sensitivity
         }
 

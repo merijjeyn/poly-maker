@@ -17,6 +17,7 @@ from logan import Logan
 from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 from configuration import TCNF
+from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
 
 @dataclass
@@ -52,19 +53,19 @@ def check_strategy_prices_within_spread(row: pd.Series) -> bool:
         
         mid_price = (best_bid + best_ask) / 2
         
-        bid_price, ask_price = AnSMarketStrategy.get_order_prices(
+        bid_price, ask_price = ANSDeriskedMarketStrategy.get_order_prices(
             best_bid=best_bid,
             best_ask=best_ask,
             mid_price=mid_price,
             row=row,
-            token=None,
+            token=str(row['token1']),
             tick=tick,
             force_sell=False
         )
         
-        # Check if both prices are within mid_price +- max_spread -> tick is temporary buffer for glft
-        lower_bound = mid_price - max_spread + (2*tick)
-        upper_bound = mid_price + max_spread - (2*tick)
+        # Check if both prices are within mid_price +- max_spread 
+        lower_bound = mid_price - max_spread
+        upper_bound = mid_price + max_spread
         
         bid_within_range = bid_price >= lower_bound and bid_price <= upper_bound
         ask_within_range = ask_price >= lower_bound and ask_price <= upper_bound

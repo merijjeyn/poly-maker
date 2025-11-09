@@ -6,6 +6,7 @@ from enum import Enum
 from typing import Optional
 
 from trading_bot.market_strategy import MarketStrategy
+from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
 from trading_bot.market_strategy.glft_strategy import GLFTMarketStrategy
 
@@ -13,7 +14,7 @@ from trading_bot.market_strategy.glft_strategy import GLFTMarketStrategy
 class StrategyType(str, Enum):
     ANS = "ans"
     GLFT = "glft"
-
+    ANS_DERISKED = "ans_derisked"
 
 class StrategyFactory:
     _instance: Optional[MarketStrategy] = None
@@ -21,7 +22,8 @@ class StrategyFactory:
     # Available strategies mapping
     _STRATEGIES = {
         StrategyType.ANS: AnSMarketStrategy,
-        StrategyType.GLFT: GLFTMarketStrategy
+        StrategyType.GLFT: GLFTMarketStrategy,
+        StrategyType.ANS_DERISKED: ANSDeriskedMarketStrategy
     }
     
     @classmethod
