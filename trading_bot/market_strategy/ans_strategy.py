@@ -1,6 +1,5 @@
 from math import log
 
-from logan import Logan
 
 from configuration import TCNF
 from trading_bot.data_utils import get_position

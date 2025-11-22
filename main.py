@@ -12,9 +12,11 @@ from trading_bot.market_manager import update_markets
 from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
 import trading_bot.global_state as global_state
 from trading_bot.data_processing import remove_from_performing
-from trading_bot.market_strategy.strategy_factory import StrategyFactory, StrategyType
+from trading_bot.market_strategy import StrategyFactory
 from dotenv import load_dotenv
 from configuration import MCNF
+from telemetry import setup_telemetry
+import logging
 
 def update_once():
     """
@@ -40,11 +42,14 @@ def remove_from_pending():
                     # If trade has been pending for more than 15 seconds, remove it
                     if current_time - global_state.performing_timestamps[col].get(trade_id, current_time) > MCNF.STALE_TRADE_TIMEOUT:
                         Logan.info(f"Removing stale entry {trade_id} from {col} after 15 seconds", namespace="cleanup")
+                        logging.info(f"Removing stale entry {trade_id} from {col} after 15 seconds", extra={"namespace": "cleanup"})
                         remove_from_performing(col, trade_id)
                 except Exception as e:
                     Logan.error(f"Error removing stale trade {trade_id} from {col}", namespace="cleanup", exception=e)
+                    logging.error(f"Error removing stale trade {trade_id} from {col}", exc_info=e, extra={"namespace": "cleanup"})
     except Exception as e:
         Logan.error("Error in remove_from_pending function while cleaning stale trades", namespace="cleanup", exception=e)
+        logging.error("Error in remove_from_pending function while cleaning stale trades", exc_info=e, extra={"namespace": "cleanup"})
 
 def update_periodically():
     """
@@ -74,6 +79,7 @@ def update_periodically():
             i += 1
         except Exception as e:
             Logan.error(f"Error in update_periodically background thread (cycle {i})", namespace="updater", exception=e)
+            logging.error(f"Error in update_periodically background thread (cycle {i})", exc_info=e, extra={"namespace": "updater"})
             
 async def main():
     """
@@ -100,20 +106,27 @@ async def main():
     # Initialize market strategy based on command-line argument
     StrategyFactory.init(args.strategy)
     Logan.info(f"Initialized market strategy: {args.strategy}", namespace="init")
+    logging.info(f"Initialized market strategy: {args.strategy}", extra={"namespace": "init"})
 
     # Initialize client
     global_state.client = PolymarketClient(env_path=args.env)
     
     # Initialize state and fetch initial data
     global_state.all_tokens = []
+    
+    # Setup Telemetry (OTel + ClickHouse)
+    setup_telemetry()
+    
     update_once()
 
     # Clear all existing orders on startup
     clear_all_orders()
 
     Logan.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", namespace="init")
+    logging.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", extra={"namespace": "init"})
 
     Logan.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions and {len(global_state.orders)} orders. Starting positions: {global_state.positions}', namespace="init")
+    logging.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions and {len(global_state.orders)} orders. Starting positions: {global_state.positions}', extra={"namespace": "init"})
 
     # Start background update thread
     update_thread = threading.Thread(target=update_periodically, daemon=True)

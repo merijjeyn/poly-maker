@@ -12,7 +12,7 @@ import trading_bot.global_state as global_state
 from google_utils import get_sheet_df
 from trading_bot.market_selection import calculate_position_sizes, filter_selected_markets
 from trading_bot.data_utils import update_liquidity
-from logan import Logan
+import logging
 
 
 def update_markets_with_positions():
@@ -40,6 +40,8 @@ def update_markets():
     if len(received_df) > 0:
         global_state.df, global_state.params = received_df.copy(), received_params
         
+        logging.info(f"Updated markets from sheet. Total markets: {len(global_state.df)}", extra={"namespace": "market_manager"})
+
         # Apply custom market filtering logic
         global_state.selected_markets_df = filter_selected_markets(global_state.df)
         

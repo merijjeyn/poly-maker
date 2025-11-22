@@ -21,3 +21,7 @@ web3
 scipy
 ruff
 ty
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-logging
+opentelemetry-exporter-otlp

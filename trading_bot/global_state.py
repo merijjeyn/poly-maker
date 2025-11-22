@@ -1,6 +1,6 @@
 import threading
 import pandas as pd
-from typing import Optional, TypeVar, Generic, cast
+from typing import TypeVar, Generic, cast
 
 from trading_bot.polymarket_client import PolymarketClient
 

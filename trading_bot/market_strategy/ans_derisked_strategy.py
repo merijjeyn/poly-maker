@@ -1,7 +1,4 @@
-import math
-from logan import Logan
 from configuration import TCNF
-from trading_bot.global_state import get_active_markets
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
 

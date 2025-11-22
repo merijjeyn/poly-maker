@@ -18,7 +18,6 @@ from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 from configuration import TCNF
 from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
-from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
 
 @dataclass
 class PositionSizeResult:
