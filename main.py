@@ -12,7 +12,7 @@ from trading_bot.market_manager import update_markets
 from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
 import trading_bot.global_state as global_state
 from trading_bot.data_processing import remove_from_performing
-from trading_bot.market_strategy import StrategyFactory
+from trading_bot.market_strategy.strategy_factory import StrategyFactory, StrategyType
 from dotenv import load_dotenv
 from configuration import MCNF
 from telemetry import setup_telemetry
@@ -100,9 +100,6 @@ async def main():
     
     load_dotenv(dotenv_path=args.env)
 
-    if not args.nologan:
-        Logan.init()
-
     # Initialize market strategy based on command-line argument
     StrategyFactory.init(args.strategy)
     Logan.info(f"Initialized market strategy: {args.strategy}", namespace="init")
@@ -114,8 +111,7 @@ async def main():
     # Initialize state and fetch initial data
     global_state.all_tokens = []
     
-    # Setup Telemetry (OTel + ClickHouse)
-    setup_telemetry()
+    setup_telemetry(nologan=args.nologan)
     
     update_once()
 
@@ -123,10 +119,8 @@ async def main():
     clear_all_orders()
 
     Logan.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", namespace="init")
-    logging.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", extra={"namespace": "init"})
 
     Logan.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions and {len(global_state.orders)} orders. Starting positions: {global_state.positions}', namespace="init")
-    logging.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions and {len(global_state.orders)} orders. Starting positions: {global_state.positions}', extra={"namespace": "init"})
 
     # Start background update thread
     update_thread = threading.Thread(target=update_periodically, daemon=True)

@@ -1,12 +1,12 @@
-import os
 import logging
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry._logs import set_logger_provider
+from logan import Logan
 
-def setup_telemetry(service_name="poly-maker-bot", collector_endpoint="http://localhost:4317"):
+def setup_telemetry(service_name="poly-maker-bot", collector_endpoint="http://localhost:4317", nologan=False):
     """
     Configures OpenTelemetry to send logs to the OTel Collector via OTLP/gRPC.
     """
@@ -26,7 +26,6 @@ def setup_telemetry(service_name="poly-maker-bot", collector_endpoint="http://lo
     # 4. Attach OTel handler to Python logging
     # This captures all standard logging.info/error calls
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-    logging.getLogger().addHandler(handler)
-    logging.getLogger().setLevel(logging.INFO)
+    Logan.init(logging_handler=handler, no_server=nologan)
     
     return logger_provider
