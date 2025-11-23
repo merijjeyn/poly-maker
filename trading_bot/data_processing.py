@@ -1,4 +1,5 @@
 from opentelemetry import trace
+from opentelemetry.metrics import get_meter
 from sortedcontainers import SortedDict
 import trading_bot.global_state as global_state
 
@@ -11,6 +12,8 @@ from trading_bot.data_utils import set_position, set_order, update_positions
 from logan import Logan
 
 tracer = trace.get_tracer("data_processing")
+meter = get_meter("data_processing")
+performing_counter = meter.create_up_down_counter("performing_counter", description="Number of trades currently being performed")
 
 def sync_order_book_data_for_reverse_token(updated_token: str):
     reverse_token = global_state.REVERSE_TOKENS[updated_token]
@@ -87,12 +90,13 @@ async def process_market_data(json_datas, trade=True):
                     span.set_attribute("side", side if side else "None")
                     span.set_attribute("price_level", price_level if price_level else "None")
                     span.set_attribute("new_size", new_size if new_size else "None")
-                    
+
                     if trade:
                         span.add_event("schedule_trade")
                         await Scheduler.schedule_task(market, perform_trade)
 
 def add_to_performing(col, id):
+    performing_counter.add(1)
     if col not in global_state.performing:
         global_state.performing[col] = set()
     
@@ -104,6 +108,7 @@ def add_to_performing(col, id):
     global_state.performing_timestamps[col][id] = time.time()
 
 def remove_from_performing(col, id):
+    performing_counter.add(-1)
     if col in global_state.performing:
         global_state.performing[col].discard(id)
 

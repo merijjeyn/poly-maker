@@ -2,9 +2,14 @@ import time
 from typing import Dict
 from dataclasses import dataclass
 
+from opentelemetry.metrics import get_meter
+
 
 # Time in seconds after which an order in flight is considered stale
 ORDER_IN_FLIGHT_TIMEOUT = 120  # 2 minutes
+
+meter = get_meter("orders_in_flight")
+orders_in_flight_counter = meter.create_up_down_counter("orders_in_flight_counter", description="Number of orders in flight")
 
 @dataclass
 class OrderInFlight:
@@ -75,6 +80,8 @@ def set_order_in_flight(market: str, order_id: str, side: str, price: float, siz
         timestamp=time.time()
     )
 
+    orders_in_flight_counter.add(1)
+
 
 def clear_order_in_flight(order_id: str):
     """
@@ -91,3 +98,5 @@ def clear_order_in_flight(order_id: str):
             if not _orders_in_flight[market]:
                 del _orders_in_flight[market]
             break
+
+    orders_in_flight_counter.add(-1)
