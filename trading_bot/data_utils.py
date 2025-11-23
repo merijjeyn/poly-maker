@@ -215,19 +215,19 @@ def update_orders():
 
     global_state.orders = orders
 
-def get_order(token):
+def get_order(token) -> dict[str, dict[str, float]]:
     token = str(token)
     if token in global_state.orders:
 
         if 'buy' not in global_state.orders[token]:
-            global_state.orders[token]['buy'] = {'price': 0, 'size': 0}
+            global_state.orders[token]['buy'] = {'price': 0.0, 'size': 0.0}
 
         if 'sell' not in global_state.orders[token]:
-            global_state.orders[token]['sell'] = {'price': 0, 'size': 0}
+            global_state.orders[token]['sell'] = {'price': 0.0, 'size': 0.0}
 
         return global_state.orders[token]
     else:
-        return {'buy': {'price': 0, 'size': 0}, 'sell': {'price': 0, 'size': 0}}
+        return {'buy': {'price': 0.0, 'size': 0.0}, 'sell': {'price': 0.0, 'size': 0.0}}
     
 def set_order(token, side, size, price):
     curr = {}

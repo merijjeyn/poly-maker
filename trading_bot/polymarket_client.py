@@ -21,7 +21,7 @@ from py_clob_client.clob_types import OpenOrderParams
 # Smart contract ABIs
 from trading_bot.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
 
-from utils import nullthrows
+from utils import nonethrows
 
 
 class PolymarketClient:
@@ -48,9 +48,9 @@ class PolymarketClient:
         host="https://clob.polymarket.com"
 
         # Get credentials from environment variables
-        key=nullthrows(os.getenv("PK"))
-        browser_address = nullthrows(os.getenv("BROWSER_ADDRESS"))
-        signature_type = int(nullthrows(os.getenv("SIGNATURE_TYPE")))
+        key=nonethrows(os.getenv("PK"))
+        browser_address = nonethrows(os.getenv("BROWSER_ADDRESS"))
+        signature_type = int(nonethrows(os.getenv("SIGNATURE_TYPE")))
 
         # Don't log sensitive wallet information
         Logan.info(
