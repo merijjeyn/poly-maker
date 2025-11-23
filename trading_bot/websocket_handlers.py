@@ -4,7 +4,7 @@ import json                        # JSON handling
 import websockets                  # WebSocket client
 from logan import Logan
 
-from trading_bot.data_processing import process_data, process_user_data
+from trading_bot.data_processing import process_market_data, process_user_data
 import trading_bot.global_state as global_state
 from configuration import MCNF
 
@@ -41,7 +41,7 @@ async def connect_market_websocket(chunk):
                     message = await websocket.recv()
                     json_data = json.loads(message)
                     # Process order book updates and trigger trading as needed
-                    await process_data(json_data)
+                    await process_market_data(json_data)
             except websockets.ConnectionClosed as e:
                 Logan.error(
                     "Market websocket connection closed unexpectedly",
