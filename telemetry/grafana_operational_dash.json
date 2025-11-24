@@ -1,0 +1,499 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ef50dqhvyby80c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 100,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.57,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "normal",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xField": "time",
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 200
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "columns": [
+              {
+                "hint": "time",
+                "name": "Timestamp"
+              },
+              {
+                "hint": "log_message",
+                "name": "Body"
+              },
+              {
+                "hint": "log_level",
+                "name": "SeverityText"
+              },
+              {
+                "hint": "log_labels",
+                "name": "LogAttributes"
+              },
+              {
+                "hint": "trace_id",
+                "name": "TraceId"
+              }
+            ],
+            "database": "default",
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "time",
+                "key": "",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "log_level",
+                "key": "",
+                "operator": "IS ANYTHING",
+                "type": "string"
+              }
+            ],
+            "limit": 1000,
+            "meta": {
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            },
+            "mode": "list",
+            "orderBy": [
+              {
+                "default": true,
+                "dir": "DESC",
+                "hint": "time",
+                "name": ""
+              }
+            ],
+            "queryType": "logs",
+            "table": "otel_logs"
+          },
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ef50dqhvyby80c"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "columns": [
+                {
+                  "hint": "time",
+                  "name": "Timestamp"
+                },
+                {
+                  "hint": "log_message",
+                  "name": "Body"
+                },
+                {
+                  "hint": "log_level",
+                  "name": "SeverityText"
+                },
+                {
+                  "hint": "log_labels",
+                  "name": "LogAttributes"
+                },
+                {
+                  "hint": "trace_id",
+                  "name": "TraceId"
+                }
+              ],
+              "database": "default",
+              "filters": [
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "hint": "time",
+                  "key": "",
+                  "operator": "WITH IN DASHBOARD TIME RANGE",
+                  "type": "datetime"
+                },
+                {
+                  "condition": "AND",
+                  "filterType": "custom",
+                  "hint": "log_level",
+                  "key": "",
+                  "operator": "IS ANYTHING",
+                  "type": "string"
+                }
+              ],
+              "limit": 1000,
+              "meta": {
+                "otelEnabled": true,
+                "otelVersion": "latest"
+              },
+              "mode": "list",
+              "orderBy": [
+                {
+                  "default": true,
+                  "dir": "DESC",
+                  "hint": "time",
+                  "name": ""
+                }
+              ],
+              "queryType": "logs",
+              "table": "otel_logs"
+            }
+          },
+          "pluginVersion": "4.11.2",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\n  toDateTime(intDiv(toUInt32(Timestamp), $__interval_s) * $__interval_s) AS time,\n  multiIf(\n    match(SeverityText, '(?i)^info'),  'info',\n    match(SeverityText, '(?i)^error'),  'error',\n    match(SeverityText, '(?i)^warn'),   'warning',\n    'other'\n  ) AS level,\n  count() AS value\nFROM default.otel_logs\nWHERE $__timeFilter(Timestamp)\nGROUP BY time, level\nHAVING level IN ('error', 'warning', 'info')\nORDER BY time, level;",
+          "refId": "A"
+        }
+      ],
+      "title": "Log Volume",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ef50dqhvyby80c"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 10,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "dedupStrategy": "signature",
+        "detailsMode": "inline",
+        "enableInfiniteScrolling": true,
+        "enableLogDetails": true,
+        "showControls": true,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "builderOptions": {
+            "columns": [
+              {
+                "hint": "trace_id",
+                "name": "TraceId"
+              },
+              {
+                "hint": "time",
+                "name": "Timestamp"
+              },
+              {
+                "hint": "log_level",
+                "name": "SeverityText"
+              },
+              {
+                "hint": "log_message",
+                "name": "Body"
+              },
+              {
+                "hint": "log_labels",
+                "name": "LogAttributes"
+              }
+            ],
+            "database": "default",
+            "filters": [
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "time",
+                "key": "",
+                "operator": "WITH IN DASHBOARD TIME RANGE",
+                "type": "datetime"
+              },
+              {
+                "condition": "AND",
+                "filterType": "custom",
+                "hint": "log_level",
+                "key": "",
+                "operator": "=",
+                "type": "string",
+                "value": "ERROR"
+              }
+            ],
+            "limit": 10000,
+            "meta": {
+              "logMessageLike": "",
+              "otelEnabled": true,
+              "otelVersion": "latest"
+            },
+            "mode": "list",
+            "orderBy": [
+              {
+                "default": true,
+                "dir": "DESC",
+                "hint": "time",
+                "name": ""
+              }
+            ],
+            "queryType": "logs",
+            "table": "otel_logs"
+          },
+          "editorType": "builder",
+          "format": 2,
+          "pluginVersion": "4.11.2",
+          "rawSql": "SELECT Timestamp as \"timestamp\", Body as \"body\", SeverityText as \"level\", LogAttributes as \"labels\", TraceId as \"traceID\" FROM \"default\".\"otel_logs\" WHERE ( timestamp >= $__fromTime AND timestamp <= $__toTime ) AND ( level = 'ERROR' ) ORDER BY timestamp DESC LIMIT 10000",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "grafana-clickhouse-datasource",
+        "uid": "ef50dqhvyby80c"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "hue",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "showValues": false,
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "bars"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.0",
+      "targets": [
+        {
+          "editorType": "sql",
+          "format": 0,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.11.2",
+          "queryType": "timeseries",
+          "rawSql": "WITH trades AS (\n  SELECT\n    Timestamp,\n    SpanId,\n    SpanAttributes['market']                 AS market,\n    lowerUTF8(SpanAttributes['side'])        AS side,\n    toFloat64OrNull(SpanAttributes['size'])  AS size,\n    toFloat64OrNull(SpanAttributes['price']) AS price\n  FROM default.otel_traces\n  WHERE $__timeFilter(Timestamp)\n    AND SpanName = 'process_user_datum'\n    AND SpanAttributes['event_type'] = 'trade'\n),\npriced AS (\n  SELECT\n    trades.*,\n    sumIf(size,       side = 'buy')  OVER w_prev AS buy_qty_prev,\n    sumIf(size*price, side = 'buy')  OVER w_prev AS buy_val_prev,\n    ifNull(buy_val_prev / nullIf(buy_qty_prev, 0), 0) AS avg_cost_prev\n  FROM trades\n  WINDOW w_prev AS (\n    PARTITION BY market\n    ORDER BY Timestamp, SpanId\n    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n  )\n)\nSELECT\n  toDateTime(intDiv(toUInt32(Timestamp), $__interval_s) * $__interval_s) AS time,\n  market,\n  sumIf(size * (price - avg_cost_prev), side = 'sell') AS realized_pnl\nFROM priced\nGROUP BY time, market\nORDER BY time, market;\n",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "grafana-clickhouse-datasource",
+            "uid": "ef50dqhvyby80c"
+          },
+          "editorType": "sql",
+          "format": 0,
+          "hide": false,
+          "meta": {
+            "builderOptions": {
+              "columns": [],
+              "database": "",
+              "limit": 1000,
+              "mode": "list",
+              "queryType": "table",
+              "table": ""
+            }
+          },
+          "pluginVersion": "4.11.2",
+          "queryType": "timeseries",
+          "rawSql": "WITH trades AS (\n  SELECT\n    Timestamp,\n    SpanId,\n    SpanAttributes['market']                 AS market,\n    lowerUTF8(SpanAttributes['side'])        AS side,\n    toFloat64OrNull(SpanAttributes['size'])  AS size,\n    toFloat64OrNull(SpanAttributes['price']) AS price\n  FROM default.otel_traces\n  WHERE $__timeFilter(Timestamp)\n    AND SpanName = 'process_user_datum'\n    AND SpanAttributes['event_type'] = 'trade'\n),\npriced AS (\n  SELECT\n    trades.*,\n    /* prior buys only (per market) */\n    sumIf(size,       side = 'buy')  OVER w_prev AS buy_qty_prev,\n    sumIf(size*price, side = 'buy')  OVER w_prev AS buy_val_prev,\n    ifNull(buy_val_prev / nullIf(buy_qty_prev, 0), 0) AS avg_cost_prev\n  FROM trades\n  WINDOW w_prev AS (\n    PARTITION BY market\n    ORDER BY Timestamp, SpanId\n    ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n  )\n)\nSELECT\n  toDateTime(intDiv(toUInt32(Timestamp), $__interval_s) * $__interval_s) AS time,\n  sumIf(size * (price - avg_cost_prev), side = 'sell')                    AS realized_pnl\nFROM priced\nGROUP BY time\nORDER BY time;\n",
+          "refId": "B"
+        }
+      ],
+      "title": "Realized P/L",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Operational",
+  "uid": "adzjlcc",
+  "version": 9
+}

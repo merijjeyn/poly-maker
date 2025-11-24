@@ -196,7 +196,7 @@ async def process_user_data(rows):
                                 f"Confirmed. Performing is {len(global_state.performing[col])}",
                                 namespace="poly_data.data_processing"
                             )
-                            span.add_event("schedule_trade")
+                            span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
                         elif row['status'] == 'MATCHED':
                             add_to_performing(col, row['id'])
@@ -210,7 +210,7 @@ async def process_user_data(rows):
                                 f"Position after matching is {global_state.positions[str(token)]}",
                                 namespace="poly_data.data_processing"
                             )
-                            span.add_event("schedule_trade")
+                            span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
                         elif row['status'] == 'MINED':
                             remove_from_performing(col, row['id'])
@@ -249,6 +249,6 @@ async def process_user_data(rows):
                         clear_order_in_flight(row['id'])
                         
                         if (row['type'] != 'PLACEMENT'): 
-                            span.add_event("schedule_trade")
+                            span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
 
