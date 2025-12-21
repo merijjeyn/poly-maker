@@ -90,6 +90,42 @@ The bot is configured via a Google Spreadsheet with several worksheets:
 
 The `poly_merger` module is a particularly powerful utility that handles position merging on Polymarket. It's built on open-source Polymarket code and provides a smooth way to consolidate positions, reducing gas fees and improving capital efficiency.
 
+## Analytics and Monitoring
+
+The bot includes telemetry infrastructure for monitoring performance and operations:
+
+### Grafana Dashboard
+
+Access the Grafana dashboard at **http://localhost:3000** (default credentials: `admin/admin`)
+
+The dashboard provides real-time visibility into:
+- Trading performance metrics
+- Order execution tracking
+- System health and operations
+
+### Setting Up Telemetry
+
+1. **Configure ClickHouse credentials** in your `.env` file:
+```
+CLICKHOUSE_HOST=your-clickhouse-host
+CLICKHOUSE_PORT=9440
+CLICKHOUSE_USER=your-username
+CLICKHOUSE_PASSWORD=your-password
+```
+
+2. **Start the OpenTelemetry Collector** (collects metrics, logs, and traces):
+```bash
+cd telemetry
+./run_collector.sh
+```
+
+This runs a Docker container that receives telemetry data and exports it to ClickHouse.
+
+3. **Import the dashboard** into Grafana:
+   - Navigate to Dashboards → Import
+   - Upload `telemetry/grafana_operational_dash.json`
+   - Configure the ClickHouse datasource connection
+
 ## Important Notes
 
 - This code interacts with real markets and can potentially lose real money

@@ -2,6 +2,7 @@ import gc                       # Garbage collection
 import os                       # Operating system interface
 import json                     # JSON handling
 import asyncio                  # Asynchronous I/O
+from growthbook.common_types import Experiment, Result, UserContext
 from opentelemetry import trace
 from opentelemetry.trace.status import Status, StatusCode
 import pandas as pd             # Data analysis library
@@ -17,6 +18,8 @@ from trading_bot.trading_utils import get_best_bid_ask_deets, round_down, round_
 from trading_bot.data_utils import get_position, get_order, get_readable_from_condition_id, get_total_balance
 from trading_bot.market_selection import get_enhanced_market_row
 from utils import nonethrows
+from growthbook import GrowthBook
+
 
 # Create directory for storing position risk information
 if not os.path.exists('positions/'):
@@ -134,6 +137,14 @@ def handle_create_order_response(resp, order):
         # open(fname, 'w').write(json.dumps(risk_details))
         # Logan.info(f"Market {market} will not be traded until {risk_details['sleep_till']}", namespace="trading")
 
+def on_experiment_viewed(experiment: Experiment, result: Result, user_context: UserContext):
+    market = user_context.attributes['id']
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("experiment_viewed") as span:
+        span.set_attribute("experiment_name", experiment.name if experiment.name is not None else "Unknown")
+        span.set_attribute("result_key", result.key)
+        span.set_attribute("market", market)
+
 
 # Dictionary to store locks for each market to prevent concurrent trading on the same market
 market_locks = {}
@@ -171,7 +182,19 @@ async def perform_trade(market):
                 if row is None:
                     Logan.warn(f"Market {market} not found in active markets, skipping", namespace="trading")
                     return
-                
+
+                # Initialize GrowthBook
+                gb = GrowthBook(
+                    api_host = "https://cdn.growthbook.io",
+                    client_key = "sdk-85rzhxYd65xY3aE",
+                    on_experiment_viewed = on_experiment_viewed
+                )
+                gb.load_features()
+                gb.set_attributes({
+                    "id": market,
+                })
+
+
                 # Check if market is in positions but not in selected markets (sell-only mode to free up capital)
                 sell_only = False
                 if hasattr(global_state, 'markets_with_positions') and hasattr(global_state, 'selected_markets_df'):
@@ -277,7 +300,7 @@ async def perform_trade(market):
                         span.set_attribute("mid_price", mid_price)
 
                         # Calculate optimal bid and ask prices based on market conditions
-                        bid_price, ask_price = StrategyFactory.get().get_order_prices(
+                        bid_price, ask_price = StrategyFactory.get_with_gb(gb).get_order_prices(
                             best_bid, best_ask, mid_price, row, token, row['tick_size'], force_sell=sell_only
                         )
                         bid_price = round(bid_price, round_length)
@@ -286,7 +309,7 @@ async def perform_trade(market):
                         span.set_attribute("ask_price", ask_price)
 
                         # Calculate how much to buy or sell based on our position
-                        buy_amount, sell_amount = StrategyFactory.get().get_buy_sell_amount(position, row, force_sell=sell_only)
+                        buy_amount, sell_amount = StrategyFactory.get_with_gb(gb).get_buy_sell_amount(position, row, force_sell=sell_only)
                         span.set_attribute("buy_amount", buy_amount)
                         span.set_attribute("sell_amount", sell_amount)
 

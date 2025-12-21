@@ -5,6 +5,9 @@ StrategyFactory manages the global market strategy instance used throughout the 
 from enum import Enum
 from typing import Optional
 
+from growthbook import GrowthBook
+from logan import Logan
+
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
@@ -37,4 +40,10 @@ class StrategyFactory:
                 "Strategy has not been initialized. Call StrategyFactory.init() first."
             )
         return cls._instance
+    
+    @classmethod
+    def get_with_gb(cls, gb: GrowthBook) -> MarketStrategy:
+        strategy = gb.get_feature_value("strategy", "ans_derisked")
+        return cls._STRATEGIES[strategy]
+
 
