@@ -142,7 +142,8 @@ def on_experiment_viewed(experiment: Experiment, result: Result, user_context: U
     tracer = trace.get_tracer(__name__)
     with tracer.start_as_current_span("experiment_viewed") as span:
         span.set_attribute("experiment_name", experiment.name if experiment.name is not None else "Unknown")
-        span.set_attribute("result_key", result.key)
+        span.set_attribute("experiment_id", experiment.key)
+        span.set_attribute("variation_id", result.key)
         span.set_attribute("market", market)
 
 

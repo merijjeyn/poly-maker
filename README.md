@@ -32,17 +32,20 @@ The repository consists of several interconnected modules:
 ## Installation
 
 1. **Clone the repository**:
+
 ```
 git clone https://github.com/yourusername/poly-maker.git
 cd poly-maker
 ```
 
 2. **Install Python dependencies**:
+
 ```
 pip install -r requirements.txt
 ```
 
 3. **Install Node.js dependencies for the merger**:
+
 ```
 cd poly_merger
 npm install
@@ -50,29 +53,34 @@ cd ..
 ```
 
 4. **Set up environment variables**:
+
 ```
 cp .env.example .env
 ```
 
 5. **Configure your credentials in `.env`**:
+
 - `PK`: Your private key for Polymarket
 - `BROWSER_ADDRESS`: Your wallet address
 
 Make sure your wallet has done at least one trade thru the UI so that the permissions are proper.
 
 6. **Set up Google Sheets integration**:
+
    - Create a Google Service Account and download credentials to the main directory
    - Copy the [sample Google Sheet](https://docs.google.com/spreadsheets/d/1Kt6yGY7CZpB75cLJJAdWo7LSp9Oz7pjqfuVWwgtn7Ns/edit?gid=1884499063#gid=1884499063)
    - Add your Google service account to the sheet with edit permissions
    - Update `SPREADSHEET_URL` in your `.env` file
 
 7. **Update market data**:
+
    - Run `python update_markets.py` to fetch all available markets
    - This should run continuously in the background (preferably on a different IP than your trading bot)
    - Add markets you want to trade to the "Selected Markets" sheet. You'd wanna select markets from the "Volatility Markets" sheet.
    - Configure corresponding parameters in the "Hyperparameters" sheet. Default parameters that worked well in November are there.
 
 8. **Start the market making bot**:
+
 ```
 python main.py
 ```
@@ -84,7 +92,6 @@ The bot is configured via a Google Spreadsheet with several worksheets:
 - **Selected Markets**: Markets you want to trade
 - **All Markets**: Database of all markets on Polymarket
 - **Hyperparameters**: Configuration parameters for the trading logic
-
 
 ## Poly Merger
 
@@ -98,7 +105,18 @@ The bot includes telemetry infrastructure for monitoring performance and operati
 
 Access the Grafana dashboard at **http://localhost:3000** (default credentials: `admin/admin`)
 
+run the docker container for the dashboard if its not already running:
+
+```
+docker run -d \
+  -p 3000:3000 \
+  -v grafana_data:/var/lib/grafana \
+  --name grafana \
+  grafana/grafana
+```
+
 The dashboard provides real-time visibility into:
+
 - Trading performance metrics
 - Order execution tracking
 - System health and operations
@@ -106,6 +124,7 @@ The dashboard provides real-time visibility into:
 ### Setting Up Telemetry
 
 1. **Configure ClickHouse credentials** in your `.env` file:
+
 ```
 CLICKHOUSE_HOST=your-clickhouse-host
 CLICKHOUSE_PORT=9440
@@ -114,6 +133,7 @@ CLICKHOUSE_PASSWORD=your-password
 ```
 
 2. **Start the OpenTelemetry Collector** (collects metrics, logs, and traces):
+
 ```bash
 cd telemetry
 ./run_collector.sh

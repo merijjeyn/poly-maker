@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Optional
 
 from growthbook import GrowthBook
-from logan import Logan
 
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
