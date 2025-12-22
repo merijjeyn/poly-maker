@@ -196,10 +196,6 @@ async def perform_trade(market):
                     "id": market,
                 })
 
-                # Get trading parameters for this market type and set it to the span
-                # params = global_state.params[row['param_type']]
-                params = global_state.params['mid'] # hardcode for now
-
                 # Check if market is in positions but not in selected markets (sell-only mode to free up capital)
                 sell_only = False
                 if hasattr(global_state, 'markets_with_positions') and hasattr(global_state, 'selected_markets_df'):
@@ -361,7 +357,7 @@ async def perform_trade(market):
 
                             # Set period to avoid trading after stop-loss
                             risk_details['sleep_till'] = str(pd.Timestamp.utcnow().tz_localize(None) + 
-                                                            pd.Timedelta(hours=params['sleep_period']))
+                                                            pd.Timedelta(minutes=TCNF.STOP_LOSS_SLEEP_PERIOD_MINS))
 
                             # Risking off
                             send_sell_order(order)
@@ -375,7 +371,8 @@ async def perform_trade(market):
                                 "spread_threshold": TCNF.STOP_LOSS_SPREAD_THRESHOLD,
                                 "3_hour_volatility": str(row['3_hour']),
                                 "volatility_threshold": TCNF.VOLATILITY_EXIT_THRESHOLD,
-                                "sleep_period": params['sleep_period'],
+                                "sleep_period_mins": TCNF.STOP_LOSS_SLEEP_PERIOD_MINS,
+                                "expected_pnl": (order['price'] - avgPrice) / avgPrice * 100 if avgPrice > 0 else 0,
                             })
                             continue
 
@@ -385,6 +382,14 @@ async def perform_trade(market):
                             order['size'] = sell_amount
                             order['price'] = ask_price
                             send_sell_order(order)
+                            span.add_event("sell_only_sell_order_sent", {
+                                "price": order['price'],
+                                "size": order['size'],
+                                "mid_price": mid_price,
+                                "max_spread": order['max_spread'],
+                                "neg_risk": order['neg_risk'],
+                                "expected_pnl": (order['price'] - avgPrice) / avgPrice * 100 if avgPrice > 0 else 0,
+                            })
                             continue
 
                         # ------- BUY ORDER LOGIC -------
@@ -443,31 +448,21 @@ async def perform_trade(market):
                                         "neg_risk": order['neg_risk'],
                                     })
                             
-                        # ------- TAKE PROFIT / SELL ORDER MANAGEMENT -------            
+                        # ------- SELL ORDER MANAGEMENT -------            
                         elif sell_amount > 0:
                             order['size'] = sell_amount
-                            
-                            # Calculate take-profit price based on average cost
-                            tp_price = round_up(avgPrice + (avgPrice * params['take_profit_threshold']/100), round_length)
-                            order['price'] = round_up(tp_price if ask_price < tp_price else ask_price, round_length)
-                            
-                            tp_price = float(tp_price)
-                            order_price = float(orders['sell']['price'])
-                            
-                            # Calculate % difference between current order and ideal price
-                            diff = abs(order_price - tp_price)/tp_price * 100
+                            order['price'] = ask_price
 
-                            # Update sell order if:
-                            if diff > 2 or orders['sell']['size'] < position * 0.97:
-                                Logan.info(f"Sending Sell Order for {token}", namespace="trading")
-                                send_sell_order(order)
-                                span.add_event("sell_order_sent", {
-                                    "price": order['price'],
-                                    "size": order['size'],
-                                    "mid_price": mid_price,
-                                    "max_spread": order['max_spread'],
-                                    "neg_risk": order['neg_risk'],
-                                })
+                            Logan.info(f"Sending Sell Order for {token}", namespace="trading")
+                            send_sell_order(order)
+                            span.add_event("sell_order_sent", {
+                                "price": order['price'],
+                                "size": order['size'],
+                                "mid_price": mid_price,
+                                "max_spread": order['max_spread'],
+                                "neg_risk": order['neg_risk'],
+                                "expected_pnl": (order['price'] - avgPrice) / avgPrice * 100 if avgPrice > 0 else 0,
+                            })
 
             except Exception as ex:
                 Logan.error(f"Critical error in perform_trade function for market {market} ({row.get('question', 'unknown question') if 'row' in locals() else 'unknown question'}): {ex}", namespace="trading", exception=ex)  # type: ignore
