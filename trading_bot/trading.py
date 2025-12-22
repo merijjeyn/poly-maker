@@ -60,7 +60,6 @@ def send_buy_order(order):
         return  # Don't place new order if existing one is fine
 
     if order['price'] >= TCNF.MIN_PRICE_LIMIT and order['price'] < TCNF.MAX_PRICE_LIMIT:
-        Logan.info(f'Creating new buy order for {order["size"]} at {order["price"]}', namespace="trading")
         resp = client.create_order(
             order['token'], 
             'BUY', 
@@ -107,7 +106,6 @@ def send_sell_order(order):
     elif not should_cancel:
         return  # Don't place new order if existing one is fine
 
-    Logan.info(f'Creating new sell order for {order["size"]} at {order["price"]}', namespace="trading")
     resp = client.create_order(
         order['token'], 
         'SELL', 
@@ -453,7 +451,6 @@ async def perform_trade(market):
                             order['size'] = sell_amount
                             order['price'] = ask_price
 
-                            Logan.info(f"Sending Sell Order for {token}", namespace="trading")
                             send_sell_order(order)
                             span.add_event("sell_order_sent", {
                                 "price": order['price'],
