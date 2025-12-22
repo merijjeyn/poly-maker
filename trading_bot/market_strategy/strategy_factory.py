@@ -42,7 +42,7 @@ class StrategyFactory:
     
     @classmethod
     def get_with_gb(cls, gb: GrowthBook) -> MarketStrategy:
-        strategy = gb.get_feature_value("strategy", "ans_derisked")
-        return cls._STRATEGIES[strategy]
+        strat = gb.get_feature_value("strategy", "ans_derisked")
+        return cls._STRATEGIES[strat]
 
 

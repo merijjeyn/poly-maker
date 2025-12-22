@@ -28,10 +28,10 @@ class TradingConfig:
     INVESTMENT_CEILING = 2000
     MAX_POSITION_MULT = 3
     BUDGET_MULT = 2
-    MARKET_COUNT = 15
+    MARKET_COUNT = 25
     
     # Risk management thresholds
-    MAX_VOLATILITY_SUM = 40.0
+    MAX_VOLATILITY_SUM = 35.0
     MIN_ATTRACTIVENESS_SCORE = 0.0
     MARKET_DEPTH_CALC_PCT = 0.3 # percentage of midpoint to include in imbalance calculation
     MARKET_DEPTH_CALC_LEVELS = 5 # number of price levels to include in imbalance calculation
@@ -49,13 +49,18 @@ class TradingConfig:
     MIN_UNIQUE_TRADERS = 5  # Minimum number of unique traders
 
     # Market strategy parameters
-    RISK_AVERSION = 0.35
+    RISK_AVERSION = 0.45
     TIME_TO_HORIZON_HOURS = 24
     ARRIVAL_RATE_BIN_SIZE = 0.01
     MIN_ARRIVAL_RATE_SENSITIVITY = 1.0
     MAX_ARRIVAL_RATE_SENSITIVITY = 80.0
     REWARD_SKEW_FACTOR = 0.15
     ORDER_BOOK_DEPTH_SKEW_FACTOR = 0.025
+
+    # Guardrails
+    VOLATILITY_EXIT_THRESHOLD = 150
+    STOP_LOSS_THRESHOLD = -4
+    STOP_LOSS_SPREAD_THRESHOLD = 0.04
 
     
 

@@ -60,6 +60,7 @@ def send_buy_order(order):
         return  # Don't place new order if existing one is fine
 
     if order['price'] >= TCNF.MIN_PRICE_LIMIT and order['price'] < TCNF.MAX_PRICE_LIMIT:
+        Logan.info(f'Creating new buy order for {order["size"]} at {order["price"]}', namespace="trading")
         resp = client.create_order(
             order['token'], 
             'BUY', 
@@ -195,27 +196,32 @@ async def perform_trade(market):
                     "id": market,
                 })
 
+                # Get trading parameters for this market type and set it to the span
+                # params = global_state.params[row['param_type']]
+                params = global_state.params['mid'] # hardcode for now
 
                 # Check if market is in positions but not in selected markets (sell-only mode to free up capital)
                 sell_only = False
                 if hasattr(global_state, 'markets_with_positions') and hasattr(global_state, 'selected_markets_df'):
                     in_positions = market in global_state.markets_with_positions['condition_id'].values if global_state.markets_with_positions is not None else False
                     in_selected = market in global_state.selected_markets_df['condition_id'].values if global_state.selected_markets_df is not None else False
-                    sell_only = in_positions and not in_selected      
+                    sell_only = in_positions and not in_selected    
+                    span.set_attribute("sell_only_reason", "market not selected anymore")  
                 
                 # Also sell if we have used most of our budget
                 total_balance = get_total_balance()
                 if global_state.available_liquidity < total_balance * (1 - TCNF.SELL_ONLY_THRESHOLD):
                     sell_only = True
+                    span.set_attribute("sell_only_reason", "not enough liquidity")
+
+                if row['3_hour'] > TCNF.VOLATILITY_EXIT_THRESHOLD:
+                    sell_only = True
+                    span.set_attribute("sell_only_reason", "volatility too high")
                 
                 span.set_attribute("sell_only", sell_only)
                 
                 # Determine decimal precision from tick size
                 round_length = len(str(row['tick_size']).split(".")[1])
-
-                # Get trading parameters for this market type
-                # params = global_state.params[row['param_type']]
-                params = global_state.params['mid'] # hardcode for now
                 
                 # Create a list with both outcomes for the market
                 deets = [
@@ -255,7 +261,7 @@ async def perform_trade(market):
                     
                 # ------- TRADING LOGIC FOR EACH OUTCOME -------
                 # Loop through both outcomes in the market (YES and NO)
-                for detail in deets:
+                for detail in deets: 
                     with tracer.start_as_current_span("perform_trade_for_token") as span:
                         token = str(detail['token'])
 
@@ -333,6 +339,46 @@ async def perform_trade(market):
                         # File to store risk management information for this market
                         fname = 'positions/' + str(market) + '.json'
 
+                        # ------- STOP LOSS LOGIC -------
+                        # pnl is too low, aggresively exit the market to minimize further risk.
+                        top_spread = top_ask - top_bid
+                        pnl = (mid_price - avgPrice) / avgPrice * 100 if avgPrice > 0 else 0
+                        span.set_attribute("pnl", pnl)
+
+                        if pnl < TCNF.STOP_LOSS_THRESHOLD and top_spread <= TCNF.STOP_LOSS_SPREAD_THRESHOLD:
+                            pos_to_sell = position
+
+                            risk_details = {
+                                'time': str(pd.Timestamp.utcnow().tz_localize(None)),
+                                'question': row['question']
+                            }
+                            risk_details['msg'] = (f"Selling {pos_to_sell} because spread is {top_spread} and pnl is {pnl} "
+                                                f"and 3 hour volatility is {row['3_hour']}, and sell_only is {sell_only}")
+
+                            # Sell at market best bid to ensure execution
+                            order['size'] = pos_to_sell
+                            order['price'] = top_bid
+
+                            # Set period to avoid trading after stop-loss
+                            risk_details['sleep_till'] = str(pd.Timestamp.utcnow().tz_localize(None) + 
+                                                            pd.Timedelta(hours=params['sleep_period']))
+
+                            # Risking off
+                            send_sell_order(order)
+
+                            # Save risk details to file
+                            open(fname, 'w').write(json.dumps(risk_details))
+                            span.add_event("stop_loss_sell_order_sent", {
+                                "pnl": pnl, 
+                                "pnl_threshold": TCNF.STOP_LOSS_THRESHOLD,
+                                "spread": top_spread,
+                                "spread_threshold": TCNF.STOP_LOSS_SPREAD_THRESHOLD,
+                                "3_hour_volatility": str(row['3_hour']),
+                                "volatility_threshold": TCNF.VOLATILITY_EXIT_THRESHOLD,
+                                "sleep_period": params['sleep_period'],
+                            })
+                            continue
+
                         # ------- SELL ONLY MODE -------
                         # The market is no longer attractive, we want to get out of it to free up capital. 
                         if sell_only and sell_amount > 0:
@@ -340,63 +386,6 @@ async def perform_trade(market):
                             order['price'] = ask_price
                             send_sell_order(order)
                             continue
-
-                        # ------- SELL ORDER LOGIC TODO: This is completely bullshit. We should just rewrite it. -------
-                        if sell_amount > 0:
-                            # Skip if we have no average price (no real position)
-                            if avgPrice == 0:
-                                Logan.warn("Avg Price is 0. Skipping", namespace="trading")
-                                continue
-
-                            order['size'] = sell_amount
-                            order['price'] = ask_price
-
-                            spread = top_ask - top_bid
-
-                            # Calculate current profit/loss on position
-                            pnl = (mid_price - avgPrice) / avgPrice * 100
-
-                            # Prepare risk details for tracking
-                            risk_details = {
-                                'time': str(pd.Timestamp.utcnow().tz_localize(None)),
-                                'question': row['question']
-                            }
-
-                            pos_to_sell = sell_amount  # Amount to sell in risk-off scenario
-
-                            # ------- STOP-LOSS LOGIC -------
-                            # Trigger stop-loss if either:
-                            # 1. PnL is below threshold and spread is tight enough to exit
-                            # 2. Volatility is too high
-                            if sell_only or (pnl < params['stop_loss_threshold'] and spread <= params['spread_threshold']) or row['3_hour'] > params['volatility_threshold']:
-                                risk_details['msg'] = (f"Selling {pos_to_sell} because spread is {spread} and pnl is {pnl} "
-                                                    f"and 3 hour volatility is {row['3_hour']}, and sell_only is {sell_only}")
-
-                                # Sell at market best bid to ensure execution
-                                order['size'] = pos_to_sell
-                                order['price'] = top_bid
-
-                                # Set period to avoid trading after stop-loss
-                                risk_details['sleep_till'] = str(pd.Timestamp.utcnow().tz_localize(None) + 
-                                                                pd.Timedelta(hours=params['sleep_period']))
-
-                                # Risking off
-                                # TODO: cancelling orders after sending sell order? 
-                                send_sell_order(order)
-                                client.cancel_all_market(market)
-
-                                # Save risk details to file
-                                open(fname, 'w').write(json.dumps(risk_details))
-                                span.add_event("stop_loss_sell_order_sent", {
-                                    "pnl": pnl, 
-                                    "pnl_threshold": params['stop_loss_threshold'],
-                                    "spread": spread,
-                                    "spread_threshold": params['spread_threshold'],
-                                    "3_hour_volatility": str(row['3_hour']),
-                                    "volatility_threshold": params['volatility_threshold'],
-                                    "sleep_period": params['sleep_period'],
-                                })
-                                continue
 
                         # ------- BUY ORDER LOGIC -------
                         # Only buy if:
