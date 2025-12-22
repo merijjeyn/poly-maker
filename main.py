@@ -22,9 +22,9 @@ def update_once():
     """
     Initialize the application state by fetching market data, positions, and orders.
     """
+    update_markets()    # Get market information from Google Sheets
     update_positions()  # Get current positions from Polymarket
     update_orders()     # Get current orders from Polymarket
-    update_markets()    # Get market information from Google Sheets
 
 def remove_from_pending():
     """
@@ -96,6 +96,7 @@ async def main():
         choices=list(StrategyType), 
         help=f"Market making strategy to use (default: {StrategyType.ANS})"
     )
+    parser.add_argument("--clear-orders", action="store_true", default=False, help="Clear all existing orders on startup")
     args = parser.parse_args()
     
     load_dotenv(dotenv_path=args.env)
@@ -115,8 +116,9 @@ async def main():
     
     update_once()
 
-    # Clear all existing orders on startup
-    clear_all_orders()
+    # Clear all existing orders on startup if requested
+    if args.clear_orders:
+        clear_all_orders()
 
     Logan.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", namespace="init")
 

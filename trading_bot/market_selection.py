@@ -510,10 +510,10 @@ def get_enhanced_market_row(condition_id: str) -> Optional[pd.Series]:
         market_row['trade_size'] = position_size_info.trade_size
         market_row['max_size'] = position_size_info.max_size
     
-    # Update order book metrics with real-time data from global_state.order_book_data
+    # Update order book metrics with real-time data, excluding our own orders
     token1 = str(market_row['token1'])
     if token1 in global_state.order_book_data:
-        order_book = global_state.order_book_data[token1]
+        order_book = global_state.get_order_book_exclude_self(token1)
         
         # Convert SortedDict to DataFrames
         bids_df = pd.DataFrame(

@@ -36,6 +36,19 @@ def process_book_data(token: str, json_data):
 
     sync_order_book_data_for_reverse_token(token)
 
+def update_book_data_for_order_event(token: str, book_side: str, price: float, delta: float):
+    if token not in global_state.order_book_data:
+        global_state.order_book_data[token] = {
+            'bids': SortedDict(),
+            'asks': SortedDict()
+        }
+    
+    global_state.order_book_data[token][book_side][price] = max(global_state.order_book_data[token][book_side].get(price, 0) + delta, 0)
+    if global_state.order_book_data[token][book_side][price] == 0:
+        del global_state.order_book_data[token][book_side][price]
+    
+    sync_order_book_data_for_reverse_token(token)
+
 def process_price_change(token: str, side, price_level, new_size):
     if side == 'bids':
         book = global_state.order_book_data[token]['bids']
@@ -69,6 +82,8 @@ async def process_market_data(json_datas, trade=True):
                 if event_type == 'book':
                     token = str(json_data['asset_id'])
                     span.set_attribute("token", token)
+
+                    Logan.debug(f"book data for market {market}: {json_data}", namespace="poly_data.data_processing")
                     process_book_data(token, json_data)
 
                     if trade:
@@ -217,7 +232,7 @@ async def process_user_data(rows):
 
                     elif row['event_type'] == 'order':
                         Logan.info(
-                            f"ORDER EVENT FOR: {row['market']}, STATUS: {row['status']}, TYPE: {row['type']}, SIDE: {side}, ORIGINAL SIZE: {row['original_size']}, SIZE MATCHED: {row['size_matched']}",
+                            f"ORDER EVENT FOR: {row['market']}, STATUS: {row['status']}, TYPE: {row['type']}, SIDE: {side}, ORIGINAL SIZE: {row['original_size']}, SIZE MATCHED: {row['size_matched']}, PRICE: {row['price']}",
                             namespace="poly_data.data_processing"
                         )
                         
@@ -226,14 +241,19 @@ async def process_user_data(rows):
                         except Exception:
                             order_size = 0
 
+                        delta = 0
                         if row['type'] == 'PLACEMENT':
-                            order_size += float(row['original_size'])
+                            delta = float(row['original_size'])
                         elif row['type'] == 'UPDATE': 
-                            order_size -= float(row['size_matched'])
+                            delta = -float(row['size_matched'])
                         elif row['type'] == 'CANCELLATION':
-                            order_size -= float(row['original_size'])
+                            delta = -float(row['original_size'])
                         
-                        order_size = max(order_size, 0)
+                        order_size = max(order_size + delta, 0)
+
+                        # Also update the order book data because its websocket only updates it on trades.
+                        book_side = 'bids' if side == 'buy' else 'asks'
+                        update_book_data_for_order_event(token, book_side, float(row['price']), delta)
 
                         span.set_attribute("original_size", row['original_size'])
                         span.set_attribute("size_matched", row['size_matched'])
@@ -248,7 +268,7 @@ async def process_user_data(rows):
                         set_order(token, side, order_size, row['price'])
                         clear_order_in_flight(row['id'])
                         
-                        if (row['type'] != 'PLACEMENT'): 
+                        if (row['type'] != 'PLACEMENT' and row['type'] != 'CANCELLATION'): 
                             span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
 
