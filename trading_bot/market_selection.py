@@ -18,6 +18,7 @@ from google_utils import get_spreadsheet
 from gspread_dataframe import set_with_dataframe
 from configuration import TCNF
 from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
+from poly_utils.market_utils import calculate_market_imbalance, calculate_market_depth
 
 @dataclass
 class PositionSizeResult:
@@ -478,13 +479,15 @@ def redistribute_for_bounds(position_sizes: dict[str, PositionSizeResult], floor
 
 def get_enhanced_market_row(condition_id: str) -> Optional[pd.Series]:
     """
-    Get market row data with enhanced position sizing information.
+    Get market row data with enhanced position sizing information and 
+    real-time order book metrics.
     
     Args:
         condition_id: The condition ID of the market
         
     Returns:
-        Enhanced market row with position sizing data, or None if not found
+        Enhanced market row with position sizing data and updated order book metrics,
+        or None if not found
     """
     active_markets = global_state.get_active_markets()
     if active_markets is None:
@@ -506,5 +509,41 @@ def get_enhanced_market_row(condition_id: str) -> Optional[pd.Series]:
         # Override trade_size and max_size with calculated values
         market_row['trade_size'] = position_size_info.trade_size
         market_row['max_size'] = position_size_info.max_size
+    
+    # Update order book metrics with real-time data from global_state.order_book_data
+    token1 = str(market_row['token1'])
+    if token1 in global_state.order_book_data:
+        order_book = global_state.order_book_data[token1]
+        
+        # Convert SortedDict to DataFrames
+        bids_df = pd.DataFrame(
+            [(price, size) for price, size in order_book['bids'].items()],
+            columns=['price', 'size']
+        ) if order_book['bids'] else pd.DataFrame(columns=['price', 'size'])
+        
+        asks_df = pd.DataFrame(
+            [(price, size) for price, size in order_book['asks'].items()],
+            columns=['price', 'size']
+        ) if order_book['asks'] else pd.DataFrame(columns=['price', 'size'])
+        
+        # Calculate midpoint from real-time order book
+        best_bid = bids_df['price'].max() if not bids_df.empty else 0
+        best_ask = asks_df['price'].min() if not asks_df.empty else 1
+        midpoint = (best_bid + best_ask) / 2
+        
+        # Calculate and update market_order_imbalance
+        try:
+            imbalance = calculate_market_imbalance(bids_df, asks_df, midpoint)
+            market_row['market_order_imbalance'] = imbalance
+        except Exception as e:
+            Logan.error(f"Error calculating market order imbalance for {token1}", namespace="poly_data.market_selection", exception=e)
+        
+        # Calculate and update depth_bids, depth_asks
+        try:
+            depth_bids, depth_asks = calculate_market_depth(bids_df, asks_df, midpoint)
+            market_row['depth_bids'] = depth_bids
+            market_row['depth_asks'] = depth_asks
+        except Exception as e:
+            Logan.error(f"Error calculating market depth for {token1}", namespace="poly_data.market_selection", exception=e)
     
     return market_row
