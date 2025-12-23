@@ -6,6 +6,7 @@ from logan import Logan
 from configuration import TCNF
 from trading_bot.data_utils import get_position
 from trading_bot.market_strategy import MarketStrategy
+from trading_bot.order_books import OrderBooks
 
 
 class AnSMarketStrategy(MarketStrategy):
@@ -73,7 +74,7 @@ class AnSMarketStrategy(MarketStrategy):
     def calculate_reservation_price(cls, best_bid, best_ask, row, token) -> float:
         pos = get_position(token)
         inventory = pos['size']
-        imbalance = row.get('market_order_imbalance', 0)
+        imbalance = cls._get_imbalance(row, token)
         mid_price = cls.calculate_weighted_mid_price(best_bid, best_ask, imbalance)
         volatility = row['volatility_sum']
         risk_aversion = TCNF.RISK_AVERSION
@@ -81,7 +82,17 @@ class AnSMarketStrategy(MarketStrategy):
         factor = 0.00000003 # Simply to scale the values to a reasonable range
         Logan.debug(f"token: {token}, imbalance: {imbalance}, mid_price: {mid_price}, inventory: {inventory}, risk_aversion: {risk_aversion}, volatility: {volatility}, time_to_horizon: {time_to_horizon}, factor: {factor}")
         return mid_price - factor * inventory * risk_aversion * (volatility**2) * time_to_horizon
-    
+
+    # The fallback to market_df (1 hour lagging info) is needed because the strategy is used 
+    # on market selection before the order book is initialized
+    @classmethod
+    def _get_imbalance(cls, row, token) -> float:
+        order_book = OrderBooks.get(token)
+        if len(order_book.bids) == 0 and len(order_book.asks) == 0:
+            return row['market_order_imbalance']
+        return order_book.get_imbalance()
+
+
     @classmethod
     def calculate_weighted_mid_price(cls, best_bid, best_ask, imbalance) -> float:
         # Calculates fair price based on the order book imbalance

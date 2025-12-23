@@ -2,6 +2,7 @@ from configuration import TCNF
 from trading_bot.global_state import get_active_markets
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
+from trading_bot.order_books import OrderBooks
 
 
 class GLFTMarketStrategy(MarketStrategy):
@@ -23,9 +24,9 @@ class GLFTMarketStrategy(MarketStrategy):
         # reward_rate = row['rewards_daily_rate']
 
         # TODO: i don't love this normalized calculation because it is affected by market selection, but it works for now.
-        # competition = cls.calculate_normalized_competition_of_market(row)
+        # competition = cls.calculate_normalized_competition_of_market(row, token)
         # trade_feq = cls.calculate_normalized_trade_feq_of_market(row)
-        order_depth = cls.calculate_normalized_order_book_depth_of_market(row)
+        order_depth = cls.calculate_normalized_order_book_depth_of_market(token)
 
         bid_price = bid_price - (TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR / order_depth)
         ask_price = ask_price + (TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR / order_depth)
@@ -53,8 +54,9 @@ class GLFTMarketStrategy(MarketStrategy):
         return bid_price, ask_price
 
     @classmethod
-    def calculate_normalized_competition_of_market(cls, row):
-        depth = row['depth_bids'] + row['depth_asks']
+    def calculate_normalized_competition_of_market(cls, token) -> float:
+        depth_bids, depth_asks = OrderBooks.get(token).get_market_depth()
+        depth = depth_bids + depth_asks
 
         markets = get_active_markets()
         avg_depth_bids = markets['depth_bids'].mean()
@@ -64,7 +66,7 @@ class GLFTMarketStrategy(MarketStrategy):
         return depth / avg_depth
     
     @classmethod
-    def calculate_normalized_trade_feq_of_market(cls, row):
+    def calculate_normalized_trade_feq_of_market(cls, row) -> float:
         trade_feq = row['avg_trades_per_day']
 
         markets = get_active_markets()
@@ -73,8 +75,10 @@ class GLFTMarketStrategy(MarketStrategy):
         return trade_feq / avg_trade_feq
     
     @classmethod
-    def calculate_normalized_order_book_depth_of_market(cls, row):
+    def calculate_normalized_order_book_depth_of_market(cls, token) -> float:
+        depth_bids, depth_asks = OrderBooks.get(token).get_market_depth()
+        depth = depth_bids + depth_asks
+
         markets = get_active_markets()
-        depth = row['depth_bids'] + row['depth_asks']
         avg_depth = markets['depth_bids'].mean() + markets['depth_asks'].mean()
         return depth / avg_depth

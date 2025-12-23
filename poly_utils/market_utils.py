@@ -21,8 +21,10 @@ def calculate_market_imbalance(bids_df, asks_df, midpoint):
     asks_in_window = asks_df[(asks_df['price'] >= window_lower) & (asks_df['price'] <= window_upper)]
     asks_size_in_window = asks_in_window['size'].sum()
 
-    imbalance = (bids_size_in_window - asks_size_in_window) / (bids_size_in_window + asks_size_in_window)
-    return imbalance
+    if (bids_size_in_window + asks_size_in_window) > 0:
+        return (bids_size_in_window - asks_size_in_window) / (bids_size_in_window + asks_size_in_window)
+    else:
+        return 0
 
 
 def calculate_market_depth(bids_df, asks_df, midpoint):

@@ -2,6 +2,8 @@ from sortedcontainers import SortedDict
 from typing import Optional, Dict
 from logan import Logan
 import trading_bot.global_state as global_state
+import pandas as pd
+from poly_utils.market_utils import calculate_market_imbalance, calculate_market_depth
 
 
 class OrderBook:
@@ -120,6 +122,69 @@ class OrderBook:
             'buy': self.get_order('buy'),
             'sell': self.get_order('sell')
         }
+
+    def _get_order_book_dataframes(self) -> tuple[pd.DataFrame, pd.DataFrame, float]:
+        """
+        Private helper method to get order book as DataFrames and calculate midpoint.
+        Excludes user's own orders from the calculation.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame, float]: (bids_df, asks_df, midpoint)
+        """
+        # Get order book excluding self orders
+        order_book_data = OrderBooks.get_order_book_exclude_self(self.token)
+
+        # Convert SortedDict to DataFrames
+        bids_df = pd.DataFrame(
+            [(price, size) for price, size in order_book_data['bids'].items()],
+            columns=['price', 'size']
+        ) if order_book_data['bids'] else pd.DataFrame(columns=['price', 'size'])
+
+        asks_df = pd.DataFrame(
+            [(price, size) for price, size in order_book_data['asks'].items()],
+            columns=['price', 'size']
+        ) if order_book_data['asks'] else pd.DataFrame(columns=['price', 'size'])
+
+        # Calculate midpoint from order book
+        best_bid = bids_df['price'].max() if not bids_df.empty else 0
+        best_ask = asks_df['price'].min() if not asks_df.empty else 1
+        midpoint = (best_bid + best_ask) / 2
+
+        return bids_df, asks_df, midpoint
+
+    def get_imbalance(self) -> float:
+        """
+        Calculate market order imbalance for this token's order book.
+        Excludes user's own orders from the calculation.
+
+        Returns:
+            float: Imbalance value between -1 and 1, where:
+                   - Positive values indicate more bid pressure
+                   - Negative values indicate more ask pressure
+        """
+        try:
+            bids_df, asks_df, midpoint = self._get_order_book_dataframes()
+            imbalance = calculate_market_imbalance(bids_df, asks_df, midpoint)
+            return imbalance
+        except Exception as e:
+            Logan.error(f"Error calculating imbalance for token {self.token}", exception=e)
+            return 0.0
+
+    def get_market_depth(self) -> tuple[float, float]:
+        """
+        Calculate market depth (depth_bids, depth_asks) for this token's order book.
+        Excludes user's own orders from the calculation.
+
+        Returns:
+            tuple[float, float]: (depth_bids, depth_asks) representing liquidity on each side
+        """
+        try:
+            bids_df, asks_df, midpoint = self._get_order_book_dataframes()
+            depth_bids, depth_asks = calculate_market_depth(bids_df, asks_df, midpoint)
+            return depth_bids, depth_asks
+        except Exception as e:
+            Logan.error(f"Error calculating market depth for token {self.token}", exception=e)
+            return 0.0, 0.0
 
 
 class OrderBooks:

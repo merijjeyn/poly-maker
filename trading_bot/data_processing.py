@@ -233,7 +233,7 @@ async def process_user_data(rows):
 
                         clear_order_in_flight(row['id'])
 
-                        if (row['type'] != 'PLACEMENT' and row['type'] != 'CANCELLATION'):
+                        if row['type'] != 'PLACEMENT':
                             span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
 

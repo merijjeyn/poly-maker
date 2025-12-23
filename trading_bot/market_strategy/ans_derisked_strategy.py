@@ -1,6 +1,7 @@
 from configuration import TCNF
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.market_strategy.ans_strategy import AnSMarketStrategy
+from trading_bot.order_books import OrderBooks
 
 
 class ANSDeriskedMarketStrategy(MarketStrategy):
@@ -28,14 +29,8 @@ class ANSDeriskedMarketStrategy(MarketStrategy):
     
     @classmethod
     def calculate_book_depth_addon(cls, token, row) -> tuple[float, float]:
-        if token == str(row['token1']):
-            depth_bids = row['depth_bids']
-            depth_asks = row['depth_asks']
-        elif token == str(row['token2']):
-            depth_bids = row['depth_asks']
-            depth_asks = row['depth_bids']
-        else:
-            raise ValueError(f"Token {token} is not in the row")
+        order_book = OrderBooks.get(token)
+        depth_bids, depth_asks = order_book.get_market_depth()
 
         avg_trade_vol = row['avg_trades_per_hour'] * row['avg_trade_size']
 
@@ -44,5 +39,4 @@ class ANSDeriskedMarketStrategy(MarketStrategy):
 
         depth_bid_addon = TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR * avg_trade_vol / depth_bids
         depth_ask_addon = TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR * avg_trade_vol / depth_asks
-        
         return depth_bid_addon, depth_ask_addon
