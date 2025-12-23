@@ -29,93 +29,140 @@ if not os.path.exists('positions/'):
 def send_buy_order(order):
     """
     Create a BUY order for a specific token.
-    
+
     This function:
     1. Cancels any existing orders for the token
     2. Checks if the order price is within acceptable range
     3. Creates a new buy order if conditions are met
-    
+
     Args:
         order (dict): Order details including token, price, size, and market parameters
     """
-    client = global_state.client
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("send_buy_order") as span:
+        client = global_state.client
 
-    # Only cancel existing orders if we need to make significant changes
-    existing_buy_size = order['orders']['buy']['size']
-    existing_buy_price = order['orders']['buy']['price']
+        span.set_attribute("token", order['token'])
+        span.set_attribute("price", order['price'])
+        span.set_attribute("size", order['size'])
+        span.set_attribute("market", order['market'])
+        span.set_attribute("neg_risk", order['neg_risk'])
 
-    # Cancel orders if price changed significantly or size needs major adjustment
-    price_diff = abs(existing_buy_price - order['price']) if existing_buy_price > 0 else float('inf')
-    size_diff = abs(existing_buy_size - order['size']) if existing_buy_size > 0 else float('inf')
-    
-    should_cancel = (
-        price_diff > TCNF.BUY_PRICE_DIFF_THRESHOLD or  # Cancel if price diff > 0.2 cents
-        size_diff > order['size'] * TCNF.SIZE_DIFF_PERCENTAGE or  # Cancel if size diff > 10%
-        existing_buy_size == 0  # Cancel if no existing buy order
-    )
-    
-    if should_cancel and (existing_buy_size > 0 or order['orders']['sell']['size'] > 0):
-        Logan.info(f"Cancelling buy orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
-        client.cancel_all_asset(order['token'])
-    elif not should_cancel:
-        return  # Don't place new order if existing one is fine
+        # Only cancel existing orders if we need to make significant changes
+        existing_buy_size = order['orders']['buy']['size']
+        existing_buy_price = order['orders']['buy']['price']
 
-    if order['price'] >= TCNF.MIN_PRICE_LIMIT and order['price'] < TCNF.MAX_PRICE_LIMIT:
-        resp = client.create_order(
-            order['token'], 
-            'BUY', 
-            order['price'], 
-            order['size'], 
-            True if order['neg_risk'] == 'TRUE' else False
+        span.set_attribute("existing_buy_size", existing_buy_size)
+        span.set_attribute("existing_buy_price", existing_buy_price)
+
+        # Cancel orders if price changed significantly or size needs major adjustment
+        price_diff = abs(existing_buy_price - order['price']) if existing_buy_price > 0 else float('inf')
+        size_diff = abs(existing_buy_size - order['size']) if existing_buy_size > 0 else float('inf')
+
+        span.set_attribute("price_diff", price_diff if price_diff != float('inf') else -1)
+        span.set_attribute("size_diff", size_diff if size_diff != float('inf') else -1)
+
+        should_cancel = (
+            price_diff > TCNF.BUY_PRICE_DIFF_THRESHOLD or  # Cancel if price diff > 0.2 cents
+            size_diff > order['size'] * TCNF.SIZE_DIFF_PERCENTAGE or  # Cancel if size diff > 10%
+            existing_buy_size == 0  # Cancel if no existing buy order
         )
-        order['side'] = 'buy'
-        handle_create_order_response(resp, order)
-    else:
-        Logan.warn(f"Not creating buy order because its outside acceptable price range ({TCNF.MIN_PRICE_LIMIT}-{TCNF.MAX_PRICE_LIMIT})", namespace="trading")
+
+        span.set_attribute("should_cancel", should_cancel)
+
+        if should_cancel and (existing_buy_size > 0 or order['orders']['sell']['size'] > 0):
+            Logan.info(f"Cancelling buy orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
+            client.cancel_all_asset(order['token'])
+            span.add_event("orders_cancelled", {
+                "price_diff": price_diff if price_diff != float('inf') else -1,
+                "size_diff": size_diff if size_diff != float('inf') else -1
+            })
+        elif not should_cancel:
+            span.add_event("order_unchanged")
+            return  # Don't place new order if existing one is fine
+
+        if order['price'] >= TCNF.MIN_PRICE_LIMIT and order['price'] < TCNF.MAX_PRICE_LIMIT:
+            resp = client.create_order(
+                order['token'],
+                'BUY',
+                order['price'],
+                order['size'],
+                True if order['neg_risk'] == 'TRUE' else False
+            )
+            order['side'] = 'buy'
+            handle_create_order_response(resp, order)
+        else:
+            Logan.warn(f"Not creating buy order because its outside acceptable price range ({TCNF.MIN_PRICE_LIMIT}-{TCNF.MAX_PRICE_LIMIT})", namespace="trading")
+            span.add_event("order_rejected_price_range", {
+                "price": order['price'],
+                "min_limit": TCNF.MIN_PRICE_LIMIT,
+                "max_limit": TCNF.MAX_PRICE_LIMIT
+            })
 
 
 def send_sell_order(order):
     """
     Create a SELL order for a specific token.
-    
+
     This function:
     1. Cancels any existing orders for the token
     2. Creates a new sell order with the specified parameters
-    
+
     Args:
         order (dict): Order details including token, price, size, and market parameters
     """
-    client = global_state.client
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span("send_sell_order") as span:
+        client = global_state.client
 
-    # Only cancel existing orders if we need to make significant changes
-    existing_sell_size = order['orders']['sell']['size']
-    existing_sell_price = order['orders']['sell']['price']
-    
-    # Cancel orders if price changed significantly or size needs major adjustment
-    price_diff = abs(existing_sell_price - order['price']) if existing_sell_price > 0 else float('inf')
-    size_diff = abs(existing_sell_size - order['size']) if existing_sell_size > 0 else float('inf')
-    
-    should_cancel = (
-        price_diff > TCNF.SELL_PRICE_DIFF_THRESHOLD or  # Cancel if price diff > 0.1 cents
-        size_diff > order['size'] * TCNF.SIZE_DIFF_PERCENTAGE or  # Cancel if size diff > 10%
-        existing_sell_size == 0  # Cancel if no existing sell order
-    )
-    
-    if should_cancel and (existing_sell_size > 0 or order['orders']['buy']['size'] > 0):
-        Logan.info(f"Cancelling sell orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
-        client.cancel_all_asset(order['token'])
-    elif not should_cancel:
-        return  # Don't place new order if existing one is fine
+        span.set_attribute("token", order['token'])
+        span.set_attribute("price", order['price'])
+        span.set_attribute("size", order['size'])
+        span.set_attribute("market", order['market'])
+        span.set_attribute("neg_risk", order['neg_risk'])
 
-    resp = client.create_order(
-        order['token'], 
-        'SELL', 
-        order['price'], 
-        order['size'], 
-        True if order['neg_risk'] == 'TRUE' else False
-    )
-    order['side'] = 'sell'
-    handle_create_order_response(resp, order)
+        # Only cancel existing orders if we need to make significant changes
+        existing_sell_size = order['orders']['sell']['size']
+        existing_sell_price = order['orders']['sell']['price']
+
+        span.set_attribute("existing_sell_size", existing_sell_size)
+        span.set_attribute("existing_sell_price", existing_sell_price)
+
+        # Cancel orders if price changed significantly or size needs major adjustment
+        price_diff = abs(existing_sell_price - order['price']) if existing_sell_price > 0 else float('inf')
+        size_diff = abs(existing_sell_size - order['size']) if existing_sell_size > 0 else float('inf')
+
+        span.set_attribute("price_diff", price_diff if price_diff != float('inf') else -1)
+        span.set_attribute("size_diff", size_diff if size_diff != float('inf') else -1)
+
+        should_cancel = (
+            price_diff > TCNF.SELL_PRICE_DIFF_THRESHOLD or  # Cancel if price diff > 0.1 cents
+            size_diff > order['size'] * TCNF.SIZE_DIFF_PERCENTAGE or  # Cancel if size diff > 10%
+            existing_sell_size == 0  # Cancel if no existing sell order
+        )
+
+        span.set_attribute("should_cancel", should_cancel)
+
+        if should_cancel and (existing_sell_size > 0 or order['orders']['buy']['size'] > 0):
+            Logan.info(f"Cancelling sell orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
+            client.cancel_all_asset(order['token'])
+            span.add_event("orders_cancelled", {
+                "price_diff": price_diff if price_diff != float('inf') else -1,
+                "size_diff": size_diff if size_diff != float('inf') else -1
+            })
+        elif not should_cancel:
+            span.add_event("order_unchanged")
+            return  # Don't place new order if existing one is fine
+
+        resp = client.create_order(
+            order['token'],
+            'SELL',
+            order['price'],
+            order['size'],
+            True if order['neg_risk'] == 'TRUE' else False
+        )
+        order['side'] = 'sell'
+        handle_create_order_response(resp, order)
 
 def handle_create_order_response(resp, order):
     if 'success' in resp and resp['success']: 
