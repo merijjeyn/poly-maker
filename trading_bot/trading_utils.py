@@ -1,8 +1,8 @@
 import math
-import trading_bot.global_state as global_state
+from trading_bot.order_books import OrderBooks
 
 def get_best_bid_ask_deets(token, size):
-    order_book = global_state.get_order_book_exclude_self(token)
+    order_book = OrderBooks.get_order_book_exclude_self(token)
     best_bid, best_bid_size, second_best_bid, second_best_bid_size, top_bid = find_best_price_with_size(order_book['bids'], size, reverse=True)
     best_ask, best_ask_size, second_best_ask, second_best_ask_size, top_ask = find_best_price_with_size(order_book['asks'], size, reverse=False)
 

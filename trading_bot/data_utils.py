@@ -1,5 +1,5 @@
-from sortedcontainers import SortedDict
 import trading_bot.global_state as global_state
+from trading_bot.order_books import OrderBooks
 import time
 from logan import Logan
 
@@ -188,7 +188,7 @@ def update_orders():
     if len(all_orders) > 0:
         for token in all_orders['asset_id'].unique():
             curr_orders = all_orders[all_orders['asset_id'] == str(token)]
-            
+
             if len(curr_orders) > 0:
                 sel_orders = {}
                 sel_orders['buy'] = curr_orders[curr_orders['side'] == 'BUY']
@@ -206,35 +206,4 @@ def update_orders():
                     elif len(curr) == 1:
                         size = float(curr.iloc[0]['original_size'] - curr.iloc[0]['size_matched'])
                         price = float(curr.iloc[0]['price'])
-                        set_order(token, side, size, price)
-
-def get_order(token) -> dict[str, dict[str, float]]:
-    token = str(token)
-    if token in global_state.orders:
-
-        if 'buy' not in global_state.orders[token]:
-            global_state.orders[token]['buy'] = {'price': 0.0, 'size': 0.0}
-
-        if 'sell' not in global_state.orders[token]:
-            global_state.orders[token]['sell'] = {'price': 0.0, 'size': 0.0}
-
-        return global_state.orders[token]
-    else:
-        return {'buy': {'price': 0.0, 'size': 0.0}, 'sell': {'price': 0.0, 'size': 0.0}}
-    
-def set_order(token, side, size, price):
-    token = str(token)
-    if token not in global_state.orders:
-        global_state.orders[token] = {}
-    global_state.orders[token][side] = {'price': float(price), 'size': float(size)}
-
-    # For the reverse token
-    if token not in global_state.REVERSE_TOKENS:
-        return
-        
-    reverse_token = global_state.REVERSE_TOKENS[token]
-    rev_side = 'buy' if side == 'sell' else 'sell'
-
-    if reverse_token not in global_state.orders:
-        global_state.orders[reverse_token] = {}
-    global_state.orders[reverse_token][rev_side] = {'price': float(price), 'size': float(size)}
+                        OrderBooks.get(token).set_order(side, size, price)

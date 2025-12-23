@@ -512,38 +512,37 @@ def get_enhanced_market_row(condition_id: str) -> Optional[pd.Series]:
     
     # Update order book metrics with real-time data, excluding our own orders
     token1 = str(market_row['token1'])
-    if token1 in global_state.order_book_data:
-        order_book = global_state.get_order_book_exclude_self(token1)
-        
-        # Convert SortedDict to DataFrames
-        bids_df = pd.DataFrame(
-            [(price, size) for price, size in order_book['bids'].items()],
-            columns=['price', 'size']
-        ) if order_book['bids'] else pd.DataFrame(columns=['price', 'size'])
-        
-        asks_df = pd.DataFrame(
-            [(price, size) for price, size in order_book['asks'].items()],
-            columns=['price', 'size']
-        ) if order_book['asks'] else pd.DataFrame(columns=['price', 'size'])
-        
-        # Calculate midpoint from real-time order book
-        best_bid = bids_df['price'].max() if not bids_df.empty else 0
-        best_ask = asks_df['price'].min() if not asks_df.empty else 1
-        midpoint = (best_bid + best_ask) / 2
-        
-        # Calculate and update market_order_imbalance
-        try:
-            imbalance = calculate_market_imbalance(bids_df, asks_df, midpoint)
-            market_row['market_order_imbalance'] = imbalance
-        except Exception as e:
-            Logan.error(f"Error calculating market order imbalance for {token1}", namespace="poly_data.market_selection", exception=e)
-        
-        # Calculate and update depth_bids, depth_asks
-        try:
-            depth_bids, depth_asks = calculate_market_depth(bids_df, asks_df, midpoint)
-            market_row['depth_bids'] = depth_bids
-            market_row['depth_asks'] = depth_asks
-        except Exception as e:
-            Logan.error(f"Error calculating market depth for {token1}", namespace="poly_data.market_selection", exception=e)
+    from trading_bot.order_books import OrderBooks
+    order_book = OrderBooks.get_order_book_exclude_self(token1)
     
+    # Convert SortedDict to DataFrames
+    bids_df = pd.DataFrame(
+        [(price, size) for price, size in order_book['bids'].items()],
+        columns=['price', 'size']
+    ) if order_book['bids'] else pd.DataFrame(columns=['price', 'size'])
+    
+    asks_df = pd.DataFrame(
+        [(price, size) for price, size in order_book['asks'].items()],
+        columns=['price', 'size']
+    ) if order_book['asks'] else pd.DataFrame(columns=['price', 'size'])
+    
+    # Calculate midpoint from real-time order book
+    best_bid = bids_df['price'].max() if not bids_df.empty else 0
+    best_ask = asks_df['price'].min() if not asks_df.empty else 1
+    midpoint = (best_bid + best_ask) / 2
+    
+    # Calculate and update market_order_imbalance
+    try:
+        imbalance = calculate_market_imbalance(bids_df, asks_df, midpoint)
+        market_row['market_order_imbalance'] = imbalance
+    except Exception as e:
+        Logan.error(f"Error calculating market order imbalance for {token1}", namespace="poly_data.market_selection", exception=e)
+    
+    # Calculate and update depth_bids, depth_asks
+    try:
+        depth_bids, depth_asks = calculate_market_depth(bids_df, asks_df, midpoint)
+        market_row['depth_bids'] = depth_bids
+        market_row['depth_asks'] = depth_asks
+    except Exception as e:
+        Logan.error(f"Error calculating market depth for {token1}", namespace="poly_data.market_selection", exception=e)
     return market_row

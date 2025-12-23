@@ -14,9 +14,10 @@ from configuration import TCNF
 # Import utility functions for trading
 from trading_bot.orders_in_flight import set_order_in_flight
 from trading_bot.market_strategy.strategy_factory import StrategyFactory
-from trading_bot.trading_utils import get_best_bid_ask_deets, round_down, round_up
-from trading_bot.data_utils import get_position, get_order, get_readable_from_condition_id, get_total_balance
+from trading_bot.trading_utils import get_best_bid_ask_deets, round_down
+from trading_bot.data_utils import get_position, get_readable_from_condition_id, get_total_balance
 from trading_bot.market_selection import get_enhanced_market_row
+from trading_bot.order_books import OrderBooks
 from utils import nonethrows
 from growthbook import GrowthBook
 
@@ -260,9 +261,9 @@ async def perform_trade(market):
                         token = str(detail['token'])
 
                         span.set_attribute("token", token)
-                        
+
                         # Get current orders for this token
-                        orders = get_order(token)
+                        orders = OrderBooks.get(token).get_all_orders()
                         span.set_attribute("existing_buy_order_price", orders['buy']['price'])
                         span.set_attribute("existing_buy_order_size", orders['buy']['size'])
                         span.set_attribute("existing_sell_order_price", orders['sell']['price'])

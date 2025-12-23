@@ -7,7 +7,6 @@ import concurrent.futures
 from logan import Logan
 
 from data_updater.activity_metrics import add_activity_metrics_to_market_data
-from configuration import TCNF
 from poly_utils.market_utils import calculate_market_imbalance, calculate_market_depth
 warnings.filterwarnings("ignore")
 

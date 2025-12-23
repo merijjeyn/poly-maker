@@ -1,8 +1,6 @@
 import threading
-from logan import Logan
 import pandas as pd
 from typing import TypeVar, Generic, cast
-from sortedcontainers import SortedDict
 
 from trading_bot.polymarket_client import PolymarketClient
 
@@ -26,10 +24,7 @@ class Global(Generic[T]):
 all_tokens = []
 
 # Mapping between tokens in the same market (YES->NO, NO->YES)
-REVERSE_TOKENS = {}  
-
-# Order book data for all markets
-order_book_data = {}  
+REVERSE_TOKENS = {}
 
 # Market configuration data from Google Sheets
 df = cast(pd.DataFrame, Global[pd.DataFrame]())
@@ -70,10 +65,6 @@ performing_timestamps = {}
 # Timestamps for when positions were last updated
 last_trade_update = {}
 
-# Current open orders for each token
-# Format: {token_id: {'buy': {price, size}, 'sell': {price, size}}}
-orders = {}
-
 # Current positions for each token
 # Format: {token_id: {'size': float, 'avgPrice': float}}
 positions = {}
@@ -104,49 +95,3 @@ def get_active_markets():
     return combined_markets
 
 
-def get_order_book_exclude_self(token: str) -> dict:
-    """
-    Get the order book for a token with the user's own orders excluded.
-    
-    This returns a copy of the order book where the user's own buy orders
-    are subtracted from bids and sell orders are subtracted from asks.
-    
-    Args:
-        token: The token ID to get the order book for
-        
-    Returns:
-        Dict with 'bids' and 'asks' SortedDicts, excluding self orders
-    """
-    if token not in order_book_data:
-        return {'bids': SortedDict(), 'asks': SortedDict()}
-    
-    # Create copies of the order book
-    bids_copy = SortedDict(order_book_data[token]['bids'])
-    asks_copy = SortedDict(order_book_data[token]['asks'])
-    
-    # Get user's orders for this token
-    token_orders = orders.get(str(token), {})
-    
-    # Subtract buy orders from bids
-    buy_order = token_orders.get('buy', {})
-    if buy_order and buy_order.get('size', 0) > 0:
-        buy_price = buy_order.get('price', 0)
-        if buy_price in bids_copy:
-            new_size = bids_copy[buy_price] - buy_order['size']
-            if new_size <= 0:
-                del bids_copy[buy_price]
-            else:
-                bids_copy[buy_price] = new_size
-    
-    # Subtract sell orders from asks
-    sell_order = token_orders.get('sell', {})
-    if sell_order and sell_order.get('size', 0) > 0:
-        sell_price = sell_order.get('price', 0)
-        if sell_price in asks_copy:
-            new_size = asks_copy[sell_price] - sell_order['size']
-            if new_size <= 0:
-                del asks_copy[sell_price]
-            else:
-                asks_copy[sell_price] = new_size
-
-    return {'bids': bids_copy, 'asks': asks_copy}

@@ -1,67 +1,20 @@
 from opentelemetry import trace
 from opentelemetry.metrics import get_meter
-from sortedcontainers import SortedDict
 import trading_bot.global_state as global_state
 
+from trading_bot.order_books import OrderBooks
 from trading_bot.orders_in_flight import clear_order_in_flight
 from trading_bot.task_scheduler import Scheduler
 from trading_bot.trading import perform_trade
-import time     
+import time
 import asyncio
-from trading_bot.data_utils import set_position, set_order, update_positions
+from trading_bot.data_utils import set_position, update_positions
 from logan import Logan
 
 tracer = trace.get_tracer("data_processing")
 meter = get_meter("data_processing")
 performing_counter = meter.create_up_down_counter("performing_counter", description="Number of trades currently being performed")
 
-def sync_order_book_data_for_reverse_token(updated_token: str):
-    reverse_token = global_state.REVERSE_TOKENS[updated_token]
-    global_state.order_book_data[reverse_token] = {
-        'bids': SortedDict(),
-        'asks': SortedDict()
-    }
-
-    global_state.order_book_data[reverse_token]['asks'].update({1 - price: size for price, size in global_state.order_book_data[updated_token]['bids'].items()})
-    global_state.order_book_data[reverse_token]['bids'].update({1 - price: size for price, size in global_state.order_book_data[updated_token]['asks'].items()})
-
-def process_book_data(token: str, json_data):
-    global_state.order_book_data[token] = {
-        'bids': SortedDict(),
-        'asks': SortedDict()
-    }
-
-    global_state.order_book_data[token]['bids'].update({float(entry['price']): float(entry['size']) for entry in json_data['bids']})
-    global_state.order_book_data[token]['asks'].update({float(entry['price']): float(entry['size']) for entry in json_data['asks']})
-
-    sync_order_book_data_for_reverse_token(token)
-
-def update_book_data_for_order_event(token: str, book_side: str, price: float, delta: float):
-    if token not in global_state.order_book_data:
-        global_state.order_book_data[token] = {
-            'bids': SortedDict(),
-            'asks': SortedDict()
-        }
-    
-    global_state.order_book_data[token][book_side][price] = max(global_state.order_book_data[token][book_side].get(price, 0) + delta, 0)
-    if global_state.order_book_data[token][book_side][price] == 0:
-        del global_state.order_book_data[token][book_side][price]
-    
-    sync_order_book_data_for_reverse_token(token)
-
-def process_price_change(token: str, side, price_level, new_size):
-    if side == 'bids':
-        book = global_state.order_book_data[token]['bids']
-    else:
-        book = global_state.order_book_data[token]['asks']
-
-    if new_size == 0:
-        if price_level in book:
-            del book[price_level]
-    else:
-        book[price_level] = new_size
-    
-    sync_order_book_data_for_reverse_token(token)
 
 async def process_market_data(json_datas, trade=True):
     with tracer.start_as_current_span("process_market_data") as span:
@@ -83,13 +36,13 @@ async def process_market_data(json_datas, trade=True):
                     token = str(json_data['asset_id'])
                     span.set_attribute("token", token)
 
-                    process_book_data(token, json_data)
+                    OrderBooks.get(token).process_book_data(json_data)
 
                     if trade:
                         span.add_event("schedule_trade")
                         await Scheduler.schedule_task(market, perform_trade)
-                        
-                        
+
+
                 elif event_type == 'price_change':
                     token, side, price_level, new_size = None, None, None, None
                     for data in json_data['price_changes']:
@@ -97,8 +50,20 @@ async def process_market_data(json_datas, trade=True):
                         side = 'bids' if data['side'] == 'BUY' else 'asks'
                         price_level = float(data['price'])
                         new_size = float(data['size'])
-                        process_price_change(token, side, price_level, new_size)
 
+                        order_book = OrderBooks.get(token)
+                        book = order_book.bids if side == 'bids' else order_book.asks
+
+                        price_level = round(float(price_level), 2)
+                        new_size = float(new_size)
+
+                        if new_size == 0:
+                            book.pop(price_level, None)
+                        else:
+                            book[price_level] = new_size
+
+                        # Sync reverse token after each price change
+                        order_book._sync_reverse_token()
 
                     span.set_attribute("token", token if token else "None")
                     span.set_attribute("side", side if side else "None")
@@ -234,25 +199,12 @@ async def process_user_data(rows):
                             f"ORDER EVENT FOR: {row['market']}, STATUS: {row['status']}, TYPE: {row['type']}, SIDE: {side}, ORIGINAL SIZE: {row['original_size']}, SIZE MATCHED: {row['size_matched']}, PRICE: {row['price']}",
                             namespace="poly_data.data_processing"
                         )
-                        
-                        try: 
-                            order_size = global_state.orders[token][side]['size'] # size of existing orders
+
+                        order_book = OrderBooks.get(token)
+                        try:
+                            order_size = order_book.get_order(side)['size']  # size of existing orders
                         except Exception:
                             order_size = 0
-
-                        delta = 0
-                        if row['type'] == 'PLACEMENT':
-                            delta = float(row['original_size'])
-                        elif row['type'] == 'UPDATE': 
-                            delta = -float(row['size_matched'])
-                        elif row['type'] == 'CANCELLATION':
-                            delta = -float(row['original_size'])
-                        
-                        order_size = max(order_size + delta, 0)
-
-                        # Also update the order book data because its websocket only updates it on trades.
-                        book_side = 'bids' if side == 'buy' else 'asks'
-                        update_book_data_for_order_event(token, book_side, float(row['price']), delta)
 
                         span.set_attribute("original_size", row['original_size'])
                         span.set_attribute("size_matched", row['size_matched'])
@@ -264,10 +216,24 @@ async def process_user_data(rows):
                         span.set_attribute("type", row['type'])
                         span.set_attribute("price", row['price'])
 
-                        set_order(token, side, order_size, row['price'])
+                        delta = 0
+                        if row['type'] == 'PLACEMENT':
+                            delta = float(row['original_size'])
+                        elif row['type'] == 'UPDATE':
+                            delta = -float(row['size_matched'])
+                        elif row['type'] == 'CANCELLATION':
+                            delta = -float(row['original_size'])
+
+                        order_size = max(order_size + delta, 0)
+
+                        # Update the order book data and set the order
+                        book_side = 'bids' if side == 'buy' else 'asks'
+                        order_book.update_book_data_for_order_event(book_side, float(row['price']), delta)
+                        order_book.set_order(side, order_size, float(row['price']))
+
                         clear_order_in_flight(row['id'])
-                        
-                        if (row['type'] != 'PLACEMENT' and row['type'] != 'CANCELLATION'): 
+
+                        if (row['type'] != 'PLACEMENT' and row['type'] != 'CANCELLATION'):
                             span.add_event("schedule_task")
                             await Scheduler.schedule_task(market, perform_trade)
 

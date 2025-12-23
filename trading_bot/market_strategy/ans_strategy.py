@@ -1,5 +1,7 @@
 from math import log
 
+from logan import Logan
+
 
 from configuration import TCNF
 from trading_bot.data_utils import get_position
@@ -58,6 +60,8 @@ class AnSMarketStrategy(MarketStrategy):
 
         reservation_price = cls.calculate_reservation_price(best_bid, best_ask, row, token)
         optimal_spread = cls.calculate_optimal_spread(row)
+
+        # Logan.debug(f"token: {token}, reservation_price: {reservation_price}, optimal_spread: {optimal_spread}")
         bid_price = reservation_price - optimal_spread/2
         ask_price = reservation_price + optimal_spread/2
 
@@ -75,6 +79,7 @@ class AnSMarketStrategy(MarketStrategy):
         risk_aversion = TCNF.RISK_AVERSION
         time_to_horizon = TCNF.TIME_TO_HORIZON_HOURS
         factor = 0.00000003 # Simply to scale the values to a reasonable range
+        Logan.debug(f"token: {token}, imbalance: {imbalance}, mid_price: {mid_price}, inventory: {inventory}, risk_aversion: {risk_aversion}, volatility: {volatility}, time_to_horizon: {time_to_horizon}, factor: {factor}")
         return mid_price - factor * inventory * risk_aversion * (volatility**2) * time_to_horizon
     
     @classmethod

@@ -120,9 +120,8 @@ async def main():
     if args.clear_orders:
         clear_all_orders()
 
-    Logan.info(f"After initial updates: orders={global_state.orders}, positions={global_state.positions}", namespace="init")
 
-    Logan.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions and {len(global_state.orders)} orders. Starting positions: {global_state.positions}', namespace="init")
+    Logan.info(f'There are {len(global_state.df)} markets, {len(global_state.positions)} positions. Starting positions: {global_state.positions}', namespace="init")
 
     # Start background update thread
     update_thread = threading.Thread(target=update_periodically, daemon=True)
