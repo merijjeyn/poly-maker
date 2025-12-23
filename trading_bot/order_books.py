@@ -27,12 +27,12 @@ class OrderBook:
         self.asks.clear()
 
         for entry in json_data['bids']:
-            price = round(float(entry['price']), 2)
+            price = round(float(entry['price']), 3)
             size = float(entry['size'])
             self.bids[price] = size
 
         for entry in json_data['asks']:
-            price = round(float(entry['price']), 2)
+            price = round(float(entry['price']), 3)
             size = float(entry['size'])
             self.asks[price] = size
 
@@ -51,12 +51,12 @@ class OrderBook:
 
         # Reverse asks become bids (at 1-price)
         for price, size in self.asks.items():
-            rev_price = round(float(1 - price), 2)
+            rev_price = round(float(1 - price), 3)
             reverse_ob.bids[rev_price] = size
 
         # Reverse bids become asks (at 1-price) 
         for price, size in self.bids.items():
-            rev_price = round(float(1 - price), 2)
+            rev_price = round(float(1 - price), 3)
             reverse_ob.asks[rev_price] = size
 
     def process_price_change(self, book_side: str, price_level: float, new_size: float):
@@ -70,7 +70,7 @@ class OrderBook:
         """
         book = self.bids if book_side == 'bids' else self.asks
 
-        price_level = round(float(price_level), 2)
+        price_level = round(float(price_level), 3)
         new_size = float(new_size)
 
         if new_size == 0:
@@ -90,7 +90,7 @@ class OrderBook:
             size: Order size
             price: Order price
         """
-        price = round(price, 2)
+        price = round(price, 3)
         self.orders[side] = {'price': price, 'size': size}
 
         # Also update reverse token's orders
@@ -107,28 +107,10 @@ class OrderBook:
 
     def get_all_orders(self) -> Dict[str, Dict[str, float]]:
         """Get all user's orders (buy and sell)"""
-        res = {
+        return {
             'buy': self.get_order('buy'),
             'sell': self.get_order('sell')
         }
-
-        import random
-        if random.random() < 0.1:
-            try:
-                client_orders = global_state.client.get_all_orders()
-                if client_orders != res:
-                    Logan.debug(
-                        f"[OrderBooks.get_all_orders] Discrepancy detected.\n"
-                        f"OrderBooks result: {res}\n"
-                        f"Client.get_all_orders: {client_orders}",
-                        namespace="order_books.debug"
-                    )
-                else: 
-                    Logan.debug(f"[OrderBooks.get_all_orders] No discrepancy detected.", namespace="order_books.debug")
-            except Exception as e:
-                Logan.error(f"[OrderBooks.get_all_orders] Error in client.get_all_orders(): {e}", namespace="order_books.debug")
-
-        return res
 
     def _get_order_book_dataframes(self) -> tuple[pd.DataFrame, pd.DataFrame, float]:
         """
@@ -238,41 +220,14 @@ class OrderBooks:
         bids_copy = SortedDict(order_book.bids)
         asks_copy = SortedDict(order_book.asks)
 
-        import random
-        real_bids, real_asks = global_state.client.get_order_book(token)
-
-        # With 10% chance, compare real_order_book with bids_copy/asks_copy for debugging
-        if random.random() < 0.1:
-            def sorted_dict_to_dict(sd):
-                return dict(sorted(sd.items()))
-
-            # Convert to dict for comparison at same price rounded to 2 decimals
-            def price_map(side):
-                return {round(float(row['price']),2): float(row['size']) for _, row in side.iterrows()}
-
-            real_bids_map = price_map(real_bids)
-            real_asks_map = price_map(real_asks)
-
-            local_bids_map = sorted_dict_to_dict(bids_copy)
-            local_asks_map = sorted_dict_to_dict(asks_copy)
-
-            if real_bids_map != local_bids_map or real_asks_map != local_asks_map:
-                Logan.debug(
-                    f"[OrderBooks.get_order_book_exclude_self] Book discrepancy for token {token}!\n"
-                    f"real_order_book bids: {real_bids_map}\nlocal bids: {local_bids_map}\n"
-                    f"real_order_book asks: {real_asks_map}\nlocal asks: {local_asks_map}",
-                    namespace="order_books.compare_debug"
-                )
-            else:
-                Logan.debug(f"[OrderBooks.get_order_book_exclude_self] No discrepancy detected for token {token}.", namespace="order_books.compare_debug")
-
+        
         # Get user's orders for this token
         buy_order = order_book.get_order('buy')
         sell_order = order_book.get_order('sell')
 
         # Subtract buy orders from bids
         if buy_order and buy_order.get('size', 0) > 0:
-            buy_price = round(float(buy_order.get('price', 0)), 2)
+            buy_price = round(float(buy_order.get('price', 0)), 3)
             if buy_price in bids_copy:
                 new_size = bids_copy[buy_price] - buy_order['size']
                 if new_size <= 0:
@@ -282,7 +237,7 @@ class OrderBooks:
 
         # Subtract sell orders from asks
         if sell_order and sell_order.get('size', 0) > 0:
-            sell_price = round(float(sell_order.get('price', 0)), 2)
+            sell_price = round(float(sell_order.get('price', 0)), 3)
             if sell_price in asks_copy:
                 new_size = asks_copy[sell_price] - sell_order['size']
                 if new_size <= 0:
