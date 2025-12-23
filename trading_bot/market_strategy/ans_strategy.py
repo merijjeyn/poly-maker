@@ -80,7 +80,6 @@ class AnSMarketStrategy(MarketStrategy):
         risk_aversion = TCNF.RISK_AVERSION
         time_to_horizon = TCNF.TIME_TO_HORIZON_HOURS
         factor = 0.00000003 # Simply to scale the values to a reasonable range
-        Logan.debug(f"token: {token}, imbalance: {imbalance}, mid_price: {mid_price}, inventory: {inventory}, risk_aversion: {risk_aversion}, volatility: {volatility}, time_to_horizon: {time_to_horizon}, factor: {factor}")
         return mid_price - factor * inventory * risk_aversion * (volatility**2) * time_to_horizon
 
     # The fallback to market_df (1 hour lagging info) is needed because the strategy is used 

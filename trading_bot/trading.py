@@ -120,22 +120,6 @@ def send_sell_order(order):
 def handle_create_order_response(resp, order):
     if 'success' in resp and resp['success']: 
         set_order_in_flight(order['market'], resp['orderID'], order['side'], order['price'], order['size'])
-    else: 
-        Logan.error(f"Error creating order for token: {order['token']}", namespace="trading")
-        
-        # TODO: some markets cause an issue. Fix it and clean up here.
-        # market = order['market']
-        # fname = 'positions/' + str(market) + '.json'
-        
-        # risk_details = {
-        #     'time': str(pd.Timestamp.utcnow().tz_localize(None)),
-        #     'question': order.get('row', {}).get('question', 'unknown'),
-        #     'msg': f"Error creating {order.get('side', 'unknown')} order for token {order['token']}. Response: {resp}",
-        #     'sleep_till': str(pd.Timestamp.utcnow().tz_localize(None) + pd.Timedelta(hours=2))
-        # }
-        
-        # open(fname, 'w').write(json.dumps(risk_details))
-        # Logan.info(f"Market {market} will not be traded until {risk_details['sleep_till']}", namespace="trading")
 
 def on_experiment_viewed(experiment: Experiment, result: Result, user_context: UserContext):
     market = user_context.attributes['id']
@@ -179,9 +163,9 @@ async def perform_trade(market):
                 # Get market details from the configuration with enhanced position sizing
                 row = get_enhanced_market_row(market)
 
-                # Skip trading if market is not in selected markets (filtered out)
+                # Skip trading if market is not in selected markets (filtered out in market selection)
                 if row is None:
-                    Logan.warn(f"Market {market} not found in active markets, skipping", namespace="trading")
+                    Logan.info(f"Market {market} not found in active markets, skipping", namespace="trading")
                     return
 
                 # Initialize GrowthBook
@@ -347,8 +331,7 @@ async def perform_trade(market):
                                 'time': str(pd.Timestamp.utcnow().tz_localize(None)),
                                 'question': row['question']
                             }
-                            risk_details['msg'] = (f"Selling {pos_to_sell} because spread is {top_spread} and pnl is {pnl} "
-                                                f"and 3 hour volatility is {row['3_hour']}, and sell_only is {sell_only}")
+                            risk_details['msg'] = (f"Selling {pos_to_sell} because spread is {top_spread} and pnl is {pnl}")
 
                             # Sell at market best bid to ensure execution
                             order['size'] = pos_to_sell
@@ -359,6 +342,7 @@ async def perform_trade(market):
                                                             pd.Timedelta(minutes=TCNF.STOP_LOSS_SLEEP_PERIOD_MINS))
 
                             # Risking off
+                            Logan.info(f"Triggered stop loss for token {token}, selling {pos_to_sell} pnl: {pnl}, spread: {top_spread}", namespace="trading")
                             send_sell_order(order)
 
                             # Save risk details to file
@@ -380,6 +364,8 @@ async def perform_trade(market):
                         if sell_only and sell_amount > 0:
                             order['size'] = sell_amount
                             order['price'] = ask_price
+
+                            Logan.info(f"Market {market} is in sell only mode, selling {sell_amount} at {ask_price}", namespace="trading")
                             send_sell_order(order)
                             span.add_event("sell_only_sell_order_sent", {
                                 "price": order['price'],
@@ -438,6 +424,7 @@ async def perform_trade(market):
                                     continue
 
                                 if position + orders['buy']['size'] < max_size:
+                                    Logan.info(f"Market {market} is buying {buy_amount} at {bid_price}", namespace="trading")
                                     send_buy_order(order)
                                     span.add_event("buy_order_sent", {
                                         "price": order['price'],
@@ -452,6 +439,7 @@ async def perform_trade(market):
                             order['size'] = sell_amount
                             order['price'] = ask_price
 
+                            Logan.info(f"Market {market} is selling {sell_amount} at {ask_price}", namespace="trading")
                             send_sell_order(order)
                             span.add_event("sell_order_sent", {
                                 "price": order['price'],
