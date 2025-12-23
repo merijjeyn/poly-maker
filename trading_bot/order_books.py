@@ -59,38 +59,27 @@ class OrderBook:
             rev_price = round(float(1 - price), 2)
             reverse_ob.asks[rev_price] = size
 
-    def update_book_data_for_order_event(self, book_side: str, price: float, delta: float):
+    def process_price_change(self, book_side: str, price_level: float, new_size: float):
         """
-        Update order book based on order event.
+        Process a price change update from WebSocket.
 
         Args:
-            book_side: 'bids' or 'asks'
-            price: Order price
-            delta: Change in size (positive for new orders, negative for cancellations)
+            side: 'bids' or 'asks'
+            price_level: Price level to update
+            new_size: New size at this price level (0 to remove)
         """
-        price = round(price, 2)
-        delta = round(delta, 2)
-
-        # Update order book
         book = self.bids if book_side == 'bids' else self.asks
-        current_size = book.get(price, 0)
-        new_size = max(current_size + delta, 0)
+
+        price_level = round(float(price_level), 2)
+        new_size = float(new_size)
 
         if new_size == 0:
-            book.pop(price, None)
+            book.pop(price_level, None)
         else:
-            book[price] = new_size
+            book[price_level] = new_size
 
-        # Sync reverse token
+        # Sync reverse token after each price change
         self._sync_reverse_token()
-
-        reverse_token = self.reverse_token
-        reverse_book = OrderBooks.get(reverse_token) if reverse_token else None
-        if reverse_book:
-            Logan.debug(
-                f"updated book data for token {self.token}: bids={dict(self.bids)}, asks={dict(self.asks)}, "
-                f"reverse book data for token {reverse_token}: bids={dict(reverse_book.bids)}, asks={dict(reverse_book.asks)}"
-            )
 
     def set_order(self, side: str, size: float, price: float):
         """
@@ -118,10 +107,28 @@ class OrderBook:
 
     def get_all_orders(self) -> Dict[str, Dict[str, float]]:
         """Get all user's orders (buy and sell)"""
-        return {
+        res = {
             'buy': self.get_order('buy'),
             'sell': self.get_order('sell')
         }
+
+        import random
+        if random.random() < 0.1:
+            try:
+                client_orders = global_state.client.get_all_orders()
+                if client_orders != res:
+                    Logan.debug(
+                        f"[OrderBooks.get_all_orders] Discrepancy detected.\n"
+                        f"OrderBooks result: {res}\n"
+                        f"Client.get_all_orders: {client_orders}",
+                        namespace="order_books.debug"
+                    )
+                else: 
+                    Logan.debug(f"[OrderBooks.get_all_orders] No discrepancy detected.", namespace="order_books.debug")
+            except Exception as e:
+                Logan.error(f"[OrderBooks.get_all_orders] Error in client.get_all_orders(): {e}", namespace="order_books.debug")
+
+        return res
 
     def _get_order_book_dataframes(self) -> tuple[pd.DataFrame, pd.DataFrame, float]:
         """
@@ -230,6 +237,34 @@ class OrderBooks:
         # Create copies of the order book
         bids_copy = SortedDict(order_book.bids)
         asks_copy = SortedDict(order_book.asks)
+
+        import random
+        real_bids, real_asks = global_state.client.get_order_book(token)
+
+        # With 10% chance, compare real_order_book with bids_copy/asks_copy for debugging
+        if random.random() < 0.1:
+            def sorted_dict_to_dict(sd):
+                return dict(sorted(sd.items()))
+
+            # Convert to dict for comparison at same price rounded to 2 decimals
+            def price_map(side):
+                return {round(float(row['price']),2): float(row['size']) for _, row in side.iterrows()}
+
+            real_bids_map = price_map(real_bids)
+            real_asks_map = price_map(real_asks)
+
+            local_bids_map = sorted_dict_to_dict(bids_copy)
+            local_asks_map = sorted_dict_to_dict(asks_copy)
+
+            if real_bids_map != local_bids_map or real_asks_map != local_asks_map:
+                Logan.debug(
+                    f"[OrderBooks.get_order_book_exclude_self] Book discrepancy for token {token}!\n"
+                    f"real_order_book bids: {real_bids_map}\nlocal bids: {local_bids_map}\n"
+                    f"real_order_book asks: {real_asks_map}\nlocal asks: {local_asks_map}",
+                    namespace="order_books.compare_debug"
+                )
+            else:
+                Logan.debug(f"[OrderBooks.get_order_book_exclude_self] No discrepancy detected for token {token}.", namespace="order_books.compare_debug")
 
         # Get user's orders for this token
         buy_order = order_book.get_order('buy')
