@@ -33,8 +33,8 @@ class TradingConfig:
     # Risk management thresholds
     MAX_VOLATILITY_SUM = 35.0
     MIN_ATTRACTIVENESS_SCORE = 0.0
-    MARKET_DEPTH_CALC_PCT = 0.3 # percentage of midpoint to include in imbalance calculation
-    MARKET_DEPTH_CALC_LEVELS = 5 # number of price levels to include in imbalance calculation
+    MARKET_DEPTH_CALC_PCT = 0.6 # percentage of midpoint to include in imbalance calculation
+    MARKET_DEPTH_CALC_LEVELS = 10 # number of price levels to include in imbalance calculation
     MAX_MARKET_ORDER_IMBALANCE = 0.6 # absolute value. 1, -1 means completely imbalanced. 0 means completely balanced.
     
     # Activity metrics calculation parameters
