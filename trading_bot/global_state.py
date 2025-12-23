@@ -149,5 +149,4 @@ def get_order_book_exclude_self(token: str) -> dict:
             else:
                 asks_copy[sell_price] = new_size
 
-    Logan.debug(f"token orders for token {token}: {token_orders}", namespace="trading_bot.global_state")
     return {'bids': bids_copy, 'asks': asks_copy}

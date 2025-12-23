@@ -83,7 +83,6 @@ async def process_market_data(json_datas, trade=True):
                     token = str(json_data['asset_id'])
                     span.set_attribute("token", token)
 
-                    Logan.debug(f"book data for market {market}: {json_data}", namespace="poly_data.data_processing")
                     process_book_data(token, json_data)
 
                     if trade:

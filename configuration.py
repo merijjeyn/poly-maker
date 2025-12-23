@@ -25,8 +25,8 @@ class TradingConfig:
     MIN_MERGE_SIZE = 20  # From CONSTANTS.py
     
     # Market selection and investment parameters
-    INVESTMENT_CEILING = 2000
-    MAX_POSITION_MULT = 3
+    INVESTMENT_CEILING = 500
+    MAX_POSITION_MULT = 2.5
     BUDGET_MULT = 2
     MARKET_COUNT = 25
     
