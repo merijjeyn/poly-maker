@@ -36,8 +36,6 @@ async def process_market_data(json_datas, trade=True):
                     token = str(json_data['asset_id'])
                     span.set_attribute("token", token)
 
-                    Logan.info(f"PROCESSING BOOK DATA FOR TOKEN: {token} json_data: {json_data}", namespace="poly_data.data_processing")
-
                     OrderBooks.get(token).process_book_data(json_data)
 
                     if trade:
@@ -53,7 +51,6 @@ async def process_market_data(json_datas, trade=True):
                         price_level = float(data['price'])
                         new_size = float(data['size'])
 
-                        Logan.info(f"PROCESSING PRICE CHANGE DATA FOR TOKEN: {token} json_data: {json_data}", namespace="poly_data.data_processing")
                         OrderBooks.get(token).process_price_change(side, price_level, new_size)
 
                     span.set_attribute("token", token if token else "None")
