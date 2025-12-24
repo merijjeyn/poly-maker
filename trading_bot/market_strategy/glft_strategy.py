@@ -1,3 +1,7 @@
+from typing import Optional
+
+from growthbook import GrowthBook
+
 from configuration import TCNF
 from trading_bot.global_state import get_active_markets
 from trading_bot.market_strategy import MarketStrategy
@@ -12,14 +16,14 @@ class GLFTMarketStrategy(MarketStrategy):
     """
     
     @classmethod
-    def get_buy_sell_amount(cls, position, row, force_sell=False) -> tuple[float, float]:
-        return AnSMarketStrategy.get_buy_sell_amount(position, row, force_sell)
+    def get_buy_sell_amount(cls, position, row, gb: Optional[GrowthBook] = None, force_sell=False) -> tuple[float, float]:
+        return AnSMarketStrategy.get_buy_sell_amount(position, row, gb, force_sell)
 
     @classmethod
-    def get_order_prices(cls, best_bid, best_ask, mid_price, row, token, tick, force_sell=False) -> tuple[float, float]:
+    def get_order_prices(cls, best_bid, best_ask, mid_price, row, token, tick, gb: Optional[GrowthBook] = None, force_sell=False) -> tuple[float, float]:
         assert mid_price != 0 and mid_price is not None, "Mid price is 0 or None"
-        
-        bid_price, ask_price = AnSMarketStrategy.get_order_prices(best_bid, best_ask, mid_price, row, token, tick, force_sell)
+
+        bid_price, ask_price = AnSMarketStrategy.get_order_prices(best_bid, best_ask, mid_price, row, token, tick, gb, force_sell)
 
         # reward_rate = row['rewards_daily_rate']
 

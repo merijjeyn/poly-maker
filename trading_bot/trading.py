@@ -334,7 +334,7 @@ async def perform_trade(market):
 
                         # Calculate optimal bid and ask prices based on market conditions
                         bid_price, ask_price = StrategyFactory.get_with_gb(gb).get_order_prices(
-                            best_bid, best_ask, mid_price, row, token, row['tick_size'], force_sell=sell_only
+                            best_bid, best_ask, mid_price, row, token, row['tick_size'], gb, force_sell=sell_only
                         )
                         bid_price = round(bid_price, round_length)
                         ask_price = round(ask_price, round_length)
@@ -342,7 +342,7 @@ async def perform_trade(market):
                         span.set_attribute("ask_price", ask_price)
 
                         # Calculate how much to buy or sell based on our position
-                        buy_amount, sell_amount = StrategyFactory.get_with_gb(gb).get_buy_sell_amount(position, row, force_sell=sell_only)
+                        buy_amount, sell_amount = StrategyFactory.get_with_gb(gb).get_buy_sell_amount(position, row, gb, force_sell=sell_only)
                         span.set_attribute("buy_amount", buy_amount)
                         span.set_attribute("sell_amount", sell_amount)
 

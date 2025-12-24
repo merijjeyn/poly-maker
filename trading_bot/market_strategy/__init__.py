@@ -1,18 +1,21 @@
 from abc import ABC, abstractmethod
+from typing import Optional
+
+from growthbook import GrowthBook
 
 
 class MarketStrategy(ABC):
     """Abstract base class defining the interface for market making strategies."""
-    
+
     @classmethod
     @abstractmethod
-    def get_buy_sell_amount(cls, position, row, force_sell=False) -> tuple[float, float]:
+    def get_buy_sell_amount(cls, position, row, gb: Optional[GrowthBook] = None, force_sell=False) -> tuple[float, float]:
         """Calculate buy and sell amounts based on position and market data."""
         pass
 
     @classmethod
     @abstractmethod
-    def get_order_prices(cls, best_bid, best_ask, mid_price, row, token, tick, force_sell=False) -> tuple[float, float]:
+    def get_order_prices(cls, best_bid, best_ask, mid_price, row, token, tick, gb: Optional[GrowthBook] = None, force_sell=False) -> tuple[float, float]:
         """Calculate optimal bid and ask prices."""
         pass
 

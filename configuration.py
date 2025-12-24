@@ -5,6 +5,10 @@ This module contains all constants used throughout the application,
 organized into logical groups for different system components.
 """
 
+from typing import Optional
+from growthbook import GrowthBook
+
+
 class TradingConfig:
     """Configuration constants for trading logic and operations."""
     
@@ -62,6 +66,12 @@ class TradingConfig:
     STOP_LOSS_THRESHOLD = -4
     STOP_LOSS_SPREAD_THRESHOLD = 0.04
     STOP_LOSS_SLEEP_PERIOD_MINS = 90
+
+    @classmethod
+    def get_risk_aversion_with_gb(cls, gb: Optional[GrowthBook] = None): 
+        if gb is None:
+            return cls.RISK_AVERSION
+        return gb.get_feature_value("risk_aversion", cls.RISK_AVERSION)
 
     
 
