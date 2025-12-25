@@ -68,8 +68,6 @@ def send_buy_order(order):
             existing_buy_size == 0  # Cancel if no existing buy order
         )
 
-        span.set_attribute("should_cancel", should_cancel)
-
         if should_cancel and (existing_buy_size > 0 or order['orders']['sell']['size'] > 0):
             Logan.info(f"Cancelling buy orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
             client.cancel_all_asset(order['token'])

@@ -9,6 +9,7 @@ from trading_bot.trading import perform_trade
 import time
 import asyncio
 from trading_bot.data_utils import set_position, update_positions
+from trading_bot.volatility_tracker import volatility_tracker
 from logan import Logan
 
 tracer = trace.get_tracer("data_processing")
@@ -58,6 +59,15 @@ async def process_market_data(json_datas, trade=True):
                     if trade:
                         span.add_event("schedule_trade")
                         await Scheduler.schedule_task(market, perform_trade)
+
+                elif event_type == 'last_trade_price':
+                    token = str(json_data['asset_id'])
+                    price = float(json_data['price'])
+                    timestamp = float(json_data['timestamp'])
+                    span.set_attribute("token", token)
+                    span.set_attribute("price", price)
+
+                    volatility_tracker.record_price(token, price, timestamp)
 
 def add_to_performing(col, id):
     performing_counter.add(1)

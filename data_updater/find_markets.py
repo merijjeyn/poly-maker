@@ -282,7 +282,7 @@ def process_market_row(row, client):
             namespace="data_updater.find_markets",
             exception=e
         )
-    ret['volatility_sum'] =  ret['24_hour'] + ret['7_day'] + ret['14_day']
+    ret['volatility_sum'] = ret['1_hour'] +ret['3_hour'] + ret['24_hour'] + ret['7_day']
     ret['volatilty/reward'] = ((ret['gm_reward_per_100'] / ret['volatility_sum']).round(2)).astype(str)
 
     # Add activity metrics using existing function

@@ -39,7 +39,7 @@ class TradingConfig:
     MIN_ATTRACTIVENESS_SCORE = 0.0
     MARKET_DEPTH_CALC_PCT = 0.6 # percentage of midpoint to include in imbalance calculation
     MARKET_DEPTH_CALC_LEVELS = 10 # number of price levels to include in imbalance calculation
-    MAX_MARKET_ORDER_IMBALANCE = 0.6 # absolute value. 1, -1 means completely imbalanced. 0 means completely balanced.
+    MAX_MARKET_ORDER_IMBALANCE = 0.4 # absolute value. 1, -1 means completely imbalanced. 0 means completely balanced.
     
     # Activity metrics calculation parameters
     ACTIVITY_LOOKBACK_DAYS = 7  # Number of days to look back for activity metrics
@@ -48,7 +48,7 @@ class TradingConfig:
     # Activity and volume filtering thresholds
     MIN_TOTAL_VOLUME = 1000.0  # Minimum total trading volume over lookback period
     MIN_VOLUME_USD = 0  # Minimum USD volume over lookback period
-    MIN_DECAY_WEIGHTED_VOLUME = 400.0  # Minimum decay-weighted volume (recent activity emphasized)
+    MIN_DECAY_WEIGHTED_VOLUME = 550.0  # Minimum decay-weighted volume (recent activity emphasized)
     MIN_AVG_TRADES_PER_DAY = 6.0  # Minimum average trades per day
     MIN_UNIQUE_TRADERS = 5  # Minimum number of unique traders
 

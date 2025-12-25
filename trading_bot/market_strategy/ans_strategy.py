@@ -8,6 +8,8 @@ from configuration import TCNF
 from trading_bot.data_utils import get_position
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.order_books import OrderBooks
+from trading_bot.volatility_tracker import volatility_tracker
+from logan import Logan
 
 
 class AnSMarketStrategy(MarketStrategy):
@@ -55,15 +57,15 @@ class AnSMarketStrategy(MarketStrategy):
     @classmethod
     def get_order_prices(cls, best_bid, best_ask, mid_price, row, token, tick, gb: Optional[GrowthBook] = None, force_sell=False) -> tuple[float, float]:
         # We don't have valid data to calculate the prices
-        if row['volatility_sum'] == 0 or row['order_arrival_rate_sensitivity'] <= 1:
+        volatility = volatility_tracker.get_volatility_for_market(token, row)
+        if volatility == 0 or row['order_arrival_rate_sensitivity'] <= 1:
             return best_bid, best_ask
 
         assert mid_price != 0 and mid_price is not None, "Mid price is 0 or None"
 
-        reservation_price = cls.calculate_reservation_price(best_bid, best_ask, row, token, gb)
-        optimal_spread = cls.calculate_optimal_spread(row, gb)
+        reservation_price = cls.calculate_reservation_price(best_bid, best_ask, row, token, volatility, gb)
+        optimal_spread = cls.calculate_optimal_spread(row, volatility, gb)
 
-        # Logan.debug(f"token: {token}, reservation_price: {reservation_price}, optimal_spread: {optimal_spread}")
         bid_price = reservation_price - optimal_spread/2
         ask_price = reservation_price + optimal_spread/2
 
@@ -72,18 +74,17 @@ class AnSMarketStrategy(MarketStrategy):
         return bid_price, ask_price
 
     @classmethod
-    def calculate_reservation_price(cls, best_bid, best_ask, row, token, gb: Optional[GrowthBook] = None) -> float:
+    def calculate_reservation_price(cls, best_bid, best_ask, row, token, volatility: float, gb: Optional[GrowthBook] = None) -> float:
         pos = get_position(token)
         inventory = pos['size']
         imbalance = cls._get_imbalance(row, token)
         mid_price = cls.calculate_weighted_mid_price(best_bid, best_ask, imbalance)
-        volatility = row['volatility_sum']
         risk_aversion = TCNF.get_risk_aversion_with_gb(gb)
         time_to_horizon = TCNF.TIME_TO_HORIZON_HOURS
         factor = 0.00000003 # Simply to scale the values to a reasonable range
         return mid_price - factor * inventory * risk_aversion * (volatility**2) * time_to_horizon
 
-    # The fallback to market_df (1 hour lagging info) is needed because the strategy is used 
+    # The fallback to market_df (1 hour lagging info) is needed because the strategy is used
     # on market selection before the order book is initialized
     @classmethod
     def _get_imbalance(cls, row, token) -> float:
@@ -92,7 +93,6 @@ class AnSMarketStrategy(MarketStrategy):
             return row['market_order_imbalance']
         return order_book.get_imbalance()
 
-
     @classmethod
     def calculate_weighted_mid_price(cls, best_bid, best_ask, imbalance) -> float:
         # Calculates fair price based on the order book imbalance
@@ -100,13 +100,12 @@ class AnSMarketStrategy(MarketStrategy):
 
 
     @classmethod
-    def calculate_optimal_spread(cls, row, gb: Optional[GrowthBook] = None) -> float:
+    def calculate_optimal_spread(cls, row, volatility: float, gb: Optional[GrowthBook] = None) -> float:
         risk_aversion = TCNF.get_risk_aversion_with_gb(gb)
         time_to_horizon = TCNF.TIME_TO_HORIZON_HOURS
-        volatility = row['volatility_sum']
         arrival_sensitivity = max(row['order_arrival_rate_sensitivity'], 1)
 
-        factor = 0.000025 # Simply to scale the values to a reasonable range
+        factor = 0.000035 # Simply to scale the values to a reasonable range
         left = risk_aversion * (volatility**2) * time_to_horizon
         right = (2/risk_aversion) * log(1 + (risk_aversion / arrival_sensitivity))
         return factor * (left + right)
