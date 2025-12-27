@@ -265,6 +265,7 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     # 4. Run the strategy on the market, and filter out markets where the calculated bid/ask spread exceeds max spread
+    df_before_strategy = df.copy()
     df = filter_markets_by_strategy_spread(df, initial_count)
     avg_attractiveness = df['attractiveness_score'].mean() if len(df) > 0 else 0
     avg_gm_reward = df['gm_reward_per_100'].mean() if len(df) > 0 else 0
@@ -278,6 +279,23 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
     df_sorted = df.sort_values(by='attractiveness_score', ascending=False, na_position='last')
     result = df_sorted.head(TCNF.MARKET_COUNT).reset_index(drop=True)
     
+    # If not enough markets, fill remaining slots from df_before_strategy (excluding already selected)
+    if len(result) < TCNF.MARKET_COUNT:
+        selected_condition_ids = set(result['condition_id'].tolist())
+        remaining_needed = TCNF.MARKET_COUNT - len(result)
+        
+        # Get markets from df_before_strategy that aren't already selected
+        df_remaining = df_before_strategy[~df_before_strategy['condition_id'].isin(selected_condition_ids)]
+        df_remaining_sorted = df_remaining.sort_values(by='attractiveness_score', ascending=False, na_position='last')
+        additional_markets = df_remaining_sorted.head(remaining_needed)
+        
+        if len(additional_markets) > 0:
+            Logan.info(
+                f"Adding {len(additional_markets)} markets from pre-strategy pool to fill remaining slots",
+                namespace="poly_data.market_selection"
+            )
+            result = pd.concat([result, additional_markets], ignore_index=True)
+    
     final_avg_attractiveness = result['attractiveness_score'].mean() if len(result) > 0 else 0
     final_avg_gm_reward = result['gm_reward_per_100'].mean() if len(result) > 0 else 0
     Logan.info(
@@ -286,6 +304,8 @@ def filter_selected_markets(markets_df: pd.DataFrame) -> pd.DataFrame:
         namespace="poly_data.market_selection"
     )
     
+    
+
     # Write selected markets back to the Selected Markets sheet
     try:
         write_selected_markets_to_sheet(result)
