@@ -116,32 +116,23 @@ async def process_user_data(rows):
                         price = 0
                         maker_outcome = ""
                         taker_outcome = row['outcome']
+                        size = float(row['size'])
+                        price = float(row['price'])
 
-                        is_user_maker = False
                         for maker_order in row['maker_orders']:
                             if maker_order['maker_address'].lower() == global_state.client.browser_wallet.lower():
+                                span.set_attribute("is_user_maker", "TRUE")
                                 Logan.info(
                                     "User is maker",
                                     namespace="poly_data.data_processing"
                                 )
                                 size = float(maker_order['matched_amount'])
                                 price = float(maker_order['price'])
+                                token = maker_order['asset_id']
                                 
-                                is_user_maker = True
-                                maker_outcome = maker_order['outcome'] #this is curious
-
+                                maker_outcome = maker_order['outcome']
                                 if maker_outcome == taker_outcome:
-                                    side = 'buy' if side == 'sell' else 'sell' #need to reverse as we reverse token too
-                                else:
-                                    token = global_state.REVERSE_TOKENS[token]
-                        
-                        if not is_user_maker:
-                            size = float(row['size'])
-                            price = float(row['price'])
-                            Logan.info(
-                                "User is taker",
-                                namespace="poly_data.data_processing"
-                            )
+                                    side = 'buy' if side == 'sell' else 'sell'
 
                         span.set_attribute("market", row['market'])
                         span.set_attribute("id", row['id'])

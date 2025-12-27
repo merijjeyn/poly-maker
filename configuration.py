@@ -32,7 +32,7 @@ class TradingConfig:
     INVESTMENT_CEILING = 500
     MAX_POSITION_MULT = 2.5
     BUDGET_MULT = 2
-    MARKET_COUNT = 25
+    MARKET_COUNT = 50
     
     # Risk management thresholds
     MAX_VOLATILITY_SUM = 35.0

@@ -79,7 +79,6 @@ def update_periodically():
             i += 1
         except Exception as e:
             Logan.error(f"Error in update_periodically background thread (cycle {i})", namespace="updater", exception=e)
-            logging.error(f"Error in update_periodically background thread (cycle {i})", exc_info=e, extra={"namespace": "updater"})
             
 async def main():
     """

@@ -111,13 +111,11 @@ def send_sell_order(order):
     """
     tracer = trace.get_tracer(__name__)
     with tracer.start_as_current_span("send_sell_order") as span:
-        client = global_state.client
+        if (order['size'] == 0):
+            span.add_event("order_size_zero")
+            return
 
-        span.set_attribute("token", order['token'])
-        span.set_attribute("price", order['price'])
-        span.set_attribute("size", order['size'])
-        span.set_attribute("market", order['market'])
-        span.set_attribute("neg_risk", order['neg_risk'])
+        client = global_state.client
 
         # Only cancel existing orders if we need to make significant changes
         existing_sell_size = order['orders']['sell']['size']
@@ -139,7 +137,7 @@ def send_sell_order(order):
             existing_sell_size == 0  # Cancel if no existing sell order
         )
 
-        span.set_attribute("should_cancel", should_cancel)
+        span.set_attribute("should_cancel", "TRUE" if should_cancel else "FALSE")
 
         if should_cancel and (existing_sell_size > 0 or order['orders']['buy']['size'] > 0):
             Logan.info(f"Cancelling sell orders - price diff: {price_diff:.4f}, size diff: {size_diff:.1f}", namespace="trading")
@@ -230,7 +228,8 @@ async def perform_trade(market):
                     in_positions = market in global_state.markets_with_positions['condition_id'].values if global_state.markets_with_positions is not None else False
                     in_selected = market in global_state.selected_markets_df['condition_id'].values if global_state.selected_markets_df is not None else False
                     sell_only = in_positions and not in_selected    
-                    span.set_attribute("sell_only_reason", "market not selected anymore")  
+                    if sell_only:
+                        span.set_attribute("sell_only_reason", "market not selected anymore")  
                 
                 # Also sell if we have used most of our budget
                 total_balance = get_total_balance()
