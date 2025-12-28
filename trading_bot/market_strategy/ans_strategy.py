@@ -106,6 +106,9 @@ class AnSMarketStrategy(MarketStrategy):
         arrival_sensitivity = max(row['order_arrival_rate_sensitivity'], 1)
 
         factor = 0.000035 # Simply to scale the values to a reasonable range
+        if gb is not None:
+            factor = gb.get_feature_value("spread_factor", factor)
+
         left = risk_aversion * (volatility**2) * time_to_horizon
         right = (2/risk_aversion) * log(1 + (risk_aversion / arrival_sensitivity))
         return factor * (left + right)
