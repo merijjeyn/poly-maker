@@ -8,6 +8,7 @@ Separated from data_utils to avoid circular imports between:
 - market_strategy (trading strategies that use data_utils)
 """
 
+from logan import Logan
 import trading_bot.global_state as global_state
 from google_utils import get_sheet_df
 from trading_bot.market_selection import calculate_position_sizes, filter_selected_markets
@@ -63,11 +64,11 @@ def update_markets():
         # Initialize REVERSE_TOKENS from all markets before filtering
         update_reverse_tokens()
 
-        # Apply custom market filtering logic
-        global_state.selected_markets_df = filter_selected_markets(global_state.df)
-
         # Update markets with positions
         update_markets_with_positions()
+
+        # Apply custom market filtering logic
+        global_state.selected_markets_df = filter_selected_markets(global_state.df)
 
         # Update available liquidity
         update_liquidity()
@@ -86,4 +87,3 @@ def update_markets():
             for col2 in [f"{row['token1']}_buy", f"{row['token1']}_sell", f"{row['token2']}_buy", f"{row['token2']}_sell"]:
                 if col2 not in global_state.performing:
                     global_state.performing[col2] = set() 
-
