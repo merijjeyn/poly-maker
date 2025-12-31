@@ -68,6 +68,7 @@ class AnSMarketStrategy(MarketStrategy):
 
         bid_price = reservation_price - optimal_spread/2
         ask_price = reservation_price + optimal_spread/2
+        Logan.debug(f"best_bid: {best_bid}, best_ask: {best_ask}, mid_price: {mid_price}, reservation_price: {reservation_price}, optimal_spread: {optimal_spread}, bid_price: {bid_price}, ask_price: {ask_price}", namespace="trading_bot.market_strategy.ans_strategy")
 
         bid_price, ask_price = cls.apply_safety_guards(bid_price, ask_price, mid_price, tick, best_bid, best_ask, force_sell)
         

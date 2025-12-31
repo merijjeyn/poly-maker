@@ -298,12 +298,7 @@ async def perform_trade(market):
                         span.set_attribute("existing_sell_order_size", orders['sell']['size'])
 
                         # Get market depth and price information
-                        deets = get_best_bid_ask_deets(token, 100)
-
-                        # NOTE: This looks hacky and risky
-                        #if deet has None for one these values below, call it with min size of 20
-                        if deets['best_bid'] is None or deets['best_ask'] is None or deets['best_bid_size'] is None or deets['best_ask_size'] is None:
-                            deets = get_best_bid_ask_deets(token, 20)
+                        deets = get_best_bid_ask_deets(token, row['min_size'])
 
                         logged_deets = {k: (v if v is not None else "None") for k, v in deets.items()}
                         span.set_attributes(logged_deets)
@@ -311,10 +306,8 @@ async def perform_trade(market):
                         # Extract all order book details
                         best_bid = round(deets['best_bid'], round_length) if deets['best_bid'] is not None else None
                         best_ask = round(deets['best_ask'], round_length) if deets['best_ask'] is not None else None
-                        top_bid = round(deets['top_bid'], round_length) if deets['top_bid'] is not None else None
-                        top_ask = round(deets['top_ask'], round_length) if deets['top_ask'] is not None else None
 
-                        if top_bid is None or top_ask is None:
+                        if best_bid is None or best_ask is None:
                             Logan.error(f"Top bid or top ask is None for token {token}", namespace="trading")
                             continue
 
@@ -326,7 +319,7 @@ async def perform_trade(market):
 
                         avgPrice = pos['avgPrice']
                         span.set_attribute("avg_price", avgPrice)
-                        mid_price = (top_bid + top_ask) / 2
+                        mid_price = (best_bid + best_ask) / 2
                         span.set_attribute("mid_price", mid_price)
 
                         # Calculate optimal bid and ask prices based on market conditions
@@ -364,7 +357,7 @@ async def perform_trade(market):
 
                         # ------- STOP LOSS LOGIC -------
                         # pnl is too low, aggresively exit the market to minimize further risk.
-                        top_spread = top_ask - top_bid
+                        top_spread = best_ask - best_bid
                         pnl = (mid_price - avgPrice) / avgPrice * 100 if avgPrice > 0 else 0
                         span.set_attribute("pnl", pnl)
 
@@ -379,7 +372,7 @@ async def perform_trade(market):
 
                             # Sell at market best bid to ensure execution
                             order['size'] = pos_to_sell
-                            order['price'] = top_bid
+                            order['price'] = best_bid
 
                             # Set period to avoid trading after stop-loss
                             risk_details['sleep_till'] = str(pd.Timestamp.utcnow().tz_localize(None) + 
