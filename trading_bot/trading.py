@@ -241,8 +241,6 @@ async def perform_trade(market):
                     sell_only = True
                     span.set_attribute("sell_only_reason", "volatility too high")
                 
-                # exiting for now
-                sell_only = True
                 span.set_attribute("sell_only", sell_only)
                 
                 # Determine decimal precision from tick size

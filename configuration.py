@@ -31,8 +31,8 @@ class TradingConfig:
     # Market selection and investment parameters
     INVESTMENT_CEILING = 500
     MAX_POSITION_MULT = 2.5
-    BUDGET_MULT = 2
-    MARKET_COUNT = 0
+    BUDGET_MULT = 2.3
+    MARKET_COUNT = 90
     
     # Risk management thresholds
     MAX_VOLATILITY_SUM = 45.0
@@ -68,12 +68,18 @@ class TradingConfig:
     STOP_LOSS_SLEEP_PERIOD_MINS = 90
 
     @classmethod
-    def get_risk_aversion_with_gb(cls, gb: Optional[GrowthBook] = None): 
+    def get_risk_aversion_with_gb(cls, gb: Optional[GrowthBook] = None):
         if gb is None:
             return cls.RISK_AVERSION
         return gb.get_feature_value("risk_aversion", cls.RISK_AVERSION)
 
-    
+    @classmethod
+    def get_order_book_depth_skew_factor_with_gb(cls, gb: Optional[GrowthBook] = None):
+        if gb is None:
+            return cls.ORDER_BOOK_DEPTH_SKEW_FACTOR
+        return gb.get_feature_value("order_book_depth_skew", cls.ORDER_BOOK_DEPTH_SKEW_FACTOR)
+
+
 
 
 class MarketProcessConfig:

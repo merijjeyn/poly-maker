@@ -23,7 +23,7 @@ class ANSDeriskedMarketStrategy(MarketStrategy):
 
         bid_price, ask_price = AnSMarketStrategy.get_order_prices(best_bid, best_ask, mid_price, row, token, tick, gb, force_sell)
 
-        depth_bid_addon, depth_ask_addon = cls.calculate_book_depth_addon(token, row)
+        depth_bid_addon, depth_ask_addon = cls.calculate_book_depth_addon(token, row, gb)
         bid_price = bid_price - depth_bid_addon
         ask_price = ask_price + depth_ask_addon
         # Logan.debug(f"depth_bid_addon: {depth_bid_addon}, depth_ask_addon: {depth_ask_addon}, bid_price: {bid_price}, ask_price: {ask_price}, mid_price: {mid_price}", namespace="trading_bot.market_strategy.ans_derisked_strategy")
@@ -32,7 +32,7 @@ class ANSDeriskedMarketStrategy(MarketStrategy):
         return bid_price, ask_price
     
     @classmethod
-    def calculate_book_depth_addon(cls, token, row) -> tuple[float, float]:
+    def calculate_book_depth_addon(cls, token, row, gb: Optional[GrowthBook] = None) -> tuple[float, float]:
         order_book = OrderBooks.get(token)
         depth_bids, depth_asks = order_book.get_market_depth()
 
@@ -41,6 +41,7 @@ class ANSDeriskedMarketStrategy(MarketStrategy):
         if depth_bids == 0 or depth_asks == 0:
             return 0, 0
 
-        depth_bid_addon = TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR * avg_trade_vol / depth_bids
-        depth_ask_addon = TCNF.ORDER_BOOK_DEPTH_SKEW_FACTOR * avg_trade_vol / depth_asks
+        skew_factor = TCNF.get_order_book_depth_skew_factor_with_gb(gb)
+        depth_bid_addon = skew_factor * avg_trade_vol / depth_bids
+        depth_ask_addon = skew_factor * avg_trade_vol / depth_asks
         return depth_bid_addon, depth_ask_addon
