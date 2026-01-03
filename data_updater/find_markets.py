@@ -1,13 +1,15 @@
-import pandas as pd
-import numpy as np
-import requests
+import concurrent.futures
 import time
 import warnings
-import concurrent.futures
+
+import numpy as np
+import pandas as pd
+import requests
 from logan import Logan
 
 from data_updater.activity_metrics import add_activity_metrics_to_market_data
-from poly_utils.market_utils import calculate_market_imbalance, calculate_market_depth
+from poly_utils.market_utils import calculate_market_depth, calculate_market_imbalance
+
 warnings.filterwarnings("ignore")
 
     
@@ -271,6 +273,8 @@ def process_market_row(row, client):
     ret['token1'] = token1
     ret['token2'] = token2
     ret['condition_id'] = row['condition_id']
+    ret['accepting_order_timestamp'] = row['accepting_order_timestamp']
+    ret['accepting_orders'] = row['accepting_orders']
 
     # Add volatility data using existing add_volatility function
     try:

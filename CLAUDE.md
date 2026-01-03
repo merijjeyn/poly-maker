@@ -34,32 +34,50 @@ The codebase is organized into several interconnected modules:
 
 ### Setup and Installation
 ```bash
-pip install -r requirements.txt
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install all dependencies (creates .venv automatically)
+uv sync
+
+# Install with dev dependencies
+uv sync --all-extras
+
+# Install Node.js dependencies for the merger
 cd poly_merger && npm install && cd ..
 ```
 
 ### Running the Bot
 ```bash
 # Update market data first (run continuously in background)
-python update_markets.py
+uv run python update_markets.py
 
 # Start the main market making bot
-python main.py
+uv run python main.py
 ```
 
 ### Utility Scripts
 ```bash
 # Update account statistics
-python update_stats.py
+uv run python update_stats.py
 
 # Sync Logan logging library
-./sync_logan.sh
+./scripts/sync_logan.sh
 ```
 
 ### Testing
 The project uses pytest for testing:
 ```bash
-pytest
+uv run pytest
+```
+
+### Adding Dependencies
+```bash
+# Add a runtime dependency
+uv add <package-name>
+
+# Add a dev dependency
+uv add --dev <package-name>
 ```
 
 ## Configuration

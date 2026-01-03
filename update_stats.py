@@ -1,8 +1,9 @@
-from trading_bot.polymarket_client import PolymarketClient
-from poly_stats.account_stats import update_stats_once
-
 import time
+
 from logan import Logan
+
+from poly_stats.account_stats import update_stats_once
+from trading_bot.polymarket_client import PolymarketClient
 
 client = PolymarketClient()
 

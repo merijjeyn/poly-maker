@@ -1,9 +1,11 @@
-from sortedcontainers import SortedDict
-from typing import Optional, Dict
-from logan import Logan
-import trading_bot.global_state as global_state
+from typing import Dict, Optional
+
 import pandas as pd
-from poly_utils.market_utils import calculate_market_imbalance, calculate_market_depth
+from logan import Logan
+from sortedcontainers import SortedDict
+
+import trading_bot.global_state as global_state
+from poly_utils.market_utils import calculate_market_depth, calculate_market_imbalance
 
 
 class OrderBook:

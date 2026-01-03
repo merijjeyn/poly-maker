@@ -1,26 +1,28 @@
+import os  # Operating system interface
+import shlex  # For safely quoting shell arguments
+import subprocess  # For calling external processes
 import time
-import os                           # Operating system interface
+
+import pandas as pd  # Data analysis
+import requests  # HTTP requests
+from logan import Logan
 
 # Polymarket API client libraries
 from py_clob_client.client import ClobClient, OrderType
-from py_clob_client.clob_types import OrderArgs, PartialCreateOrderOptions
+from py_clob_client.clob_types import (
+    OpenOrderParams,
+    OrderArgs,
+    PartialCreateOrderOptions,
+)
 from py_clob_client.constants import POLYGON
-from configuration import TCNF
 
 # Web3 libraries for blockchain interaction
 from web3 import Web3
 
-import requests                     # HTTP requests
-import pandas as pd                 # Data analysis
-import subprocess                   # For calling external processes
-import shlex                        # For safely quoting shell arguments
-from logan import Logan
-
-from py_clob_client.clob_types import OpenOrderParams
+from configuration import TCNF
 
 # Smart contract ABIs
-from trading_bot.abis import NegRiskAdapterABI, ConditionalTokenABI, erc20_abi
-
+from trading_bot.abis import ConditionalTokenABI, NegRiskAdapterABI, erc20_abi
 from utils import nonethrows
 
 

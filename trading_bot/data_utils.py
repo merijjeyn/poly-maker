@@ -1,7 +1,10 @@
+import time
+
+from logan import Logan
+
 import trading_bot.global_state as global_state
 from trading_bot.order_books import OrderBooks
-import time
-from logan import Logan
+
 
 # Note: is accidently removing position bug fixed? 
 def update_positions(avgOnly=False):

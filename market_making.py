@@ -1,22 +1,26 @@
-import gc                      # Garbage collection
-import time                    # Time functions
-import asyncio                 # Asynchronous I/O
-import threading               # Thread management
-import argparse                # Command line argument parsing
+import argparse  # Command line argument parsing
+import asyncio  # Asynchronous I/O
+import gc  # Garbage collection
+import logging
+import threading  # Thread management
+import time  # Time functions
+
+from dotenv import load_dotenv
 from logan import Logan
 
-
-from trading_bot.polymarket_client import PolymarketClient
-from trading_bot.data_utils import update_positions, update_orders, clear_all_orders
-from trading_bot.market_manager import update_markets
-from trading_bot.websocket_handlers import connect_market_websocket, connect_user_websocket
 import trading_bot.global_state as global_state
-from trading_bot.data_processing import remove_from_performing
-from trading_bot.market_strategy.strategy_factory import StrategyFactory, StrategyType
-from dotenv import load_dotenv
 from configuration import MCNF
 from telemetry import setup_telemetry
-import logging
+from trading_bot.data_processing import remove_from_performing
+from trading_bot.data_utils import clear_all_orders, update_orders, update_positions
+from trading_bot.market_manager import update_markets
+from trading_bot.market_strategy.strategy_factory import StrategyFactory, StrategyType
+from trading_bot.polymarket_client import PolymarketClient
+from trading_bot.websocket_handlers import (
+    connect_market_websocket,
+    connect_user_websocket,
+)
+
 
 def update_once():
     """

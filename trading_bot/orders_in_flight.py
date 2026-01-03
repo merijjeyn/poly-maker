@@ -1,9 +1,8 @@
 import time
-from typing import Dict
 from dataclasses import dataclass
+from typing import Dict
 
 from opentelemetry.metrics import get_meter
-
 
 # Time in seconds after which an order in flight is considered stale
 ORDER_IN_FLIGHT_TIMEOUT = 120  # 2 minutes

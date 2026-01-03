@@ -1,16 +1,17 @@
+import asyncio
+import time
+
+from logan import Logan
 from opentelemetry import trace
 from opentelemetry.metrics import get_meter
-import trading_bot.global_state as global_state
 
+import trading_bot.global_state as global_state
+from trading_bot.data_utils import set_position, update_positions
 from trading_bot.order_books import OrderBooks
 from trading_bot.orders_in_flight import clear_order_in_flight
 from trading_bot.task_scheduler import Scheduler
-from trading_bot.trading import perform_trade
-import time
-import asyncio
-from trading_bot.data_utils import set_position, update_positions
+from trading_bot.market_making.mm_trading import perform_market_making
 from trading_bot.volatility_tracker import volatility_tracker
-from logan import Logan
 
 tracer = trace.get_tracer("data_processing")
 meter = get_meter("data_processing")
@@ -41,7 +42,7 @@ async def process_market_data(json_datas, trade=True):
 
                     if trade:
                         span.add_event("schedule_trade")
-                        await Scheduler.schedule_task(market, perform_trade)
+                        await Scheduler.schedule_task(market, perform_market_making)
 
 
                 elif event_type == 'price_change':
@@ -58,7 +59,7 @@ async def process_market_data(json_datas, trade=True):
 
                     if trade:
                         span.add_event("schedule_trade")
-                        await Scheduler.schedule_task(market, perform_trade)
+                        await Scheduler.schedule_task(market, perform_market_making)
 
                 elif event_type == 'last_trade_price':
                     token = str(json_data['asset_id'])
@@ -162,7 +163,7 @@ async def process_user_data(rows):
                                 namespace="poly_data.data_processing"
                             )
                             span.add_event("schedule_task")
-                            await Scheduler.schedule_task(market, perform_trade)
+                            await Scheduler.schedule_task(market, perform_market_making)
                         elif row['status'] == 'MATCHED':
                             add_to_performing(col, row['id'])
 
@@ -176,7 +177,7 @@ async def process_user_data(rows):
                                 namespace="poly_data.data_processing"
                             )
                             span.add_event("schedule_task")
-                            await Scheduler.schedule_task(market, perform_trade)
+                            await Scheduler.schedule_task(market, perform_market_making)
                         elif row['status'] == 'MINED':
                             remove_from_performing(col, row['id'])
 
@@ -216,5 +217,5 @@ async def process_user_data(rows):
 
                         if row['type'] == 'UPDATE':
                             span.add_event("schedule_task")
-                            await Scheduler.schedule_task(market, perform_trade)
+                            await Scheduler.schedule_task(market, perform_market_making)
 

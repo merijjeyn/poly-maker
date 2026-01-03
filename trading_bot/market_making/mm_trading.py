@@ -1,26 +1,30 @@
-import gc                       # Garbage collection
-import os                       # Operating system interface
-import json                     # JSON handling
-import asyncio                  # Asynchronous I/O
+import asyncio  # Asynchronous I/O
+import gc  # Garbage collection
+import json  # JSON handling
+import os  # Operating system interface
+
+import pandas as pd  # Data analysis library
+from growthbook import GrowthBook
 from growthbook.common_types import Experiment, Result, UserContext
+from logan import Logan  # Logging
 from opentelemetry import trace
 from opentelemetry.trace.status import Status, StatusCode
-import pandas as pd             # Data analysis library
-from logan import Logan         # Logging
+from trading_bot.market_making.mm_market_selection import get_enhanced_market_row
 
 import trading_bot.global_state as global_state
 from configuration import TCNF
+from trading_bot.data_utils import (
+    get_position,
+    get_readable_from_condition_id,
+    get_total_balance,
+)
+from trading_bot.market_strategy.strategy_factory import StrategyFactory
+from trading_bot.order_books import OrderBooks
 
 # Import utility functions for trading
 from trading_bot.orders_in_flight import set_order_in_flight
-from trading_bot.market_strategy.strategy_factory import StrategyFactory
 from trading_bot.trading_utils import get_best_bid_ask_deets, round_down
-from trading_bot.data_utils import get_position, get_readable_from_condition_id, get_total_balance
-from trading_bot.market_selection import get_enhanced_market_row
-from trading_bot.order_books import OrderBooks
 from utils import nonethrows
-from growthbook import GrowthBook
-
 
 # Create directory for storing position risk information
 if not os.path.exists('positions/'):
@@ -177,9 +181,9 @@ def on_experiment_viewed(experiment: Experiment, result: Result, user_context: U
 # Dictionary to store locks for each market to prevent concurrent trading on the same market
 market_locks = {}
 
-async def perform_trade(market):
+async def perform_market_making(market: str) -> None:
     """
-    Main trading function that handles market making for a specific market.
+    Main market making function that handles market making for a specific market.
     
     This function:
     1. Merges positions when possible to free up capital
@@ -198,7 +202,7 @@ async def perform_trade(market):
     # Note: The task scheduler is used to prevent concurrent trading on the same market so locks should not be needed. But let's do a slow rollout
     async with market_locks[market]:
         tracer = trace.get_tracer(__name__)
-        with tracer.start_as_current_span("perform_trade") as span:
+        with tracer.start_as_current_span("perform_market_making") as span:
             span.set_attribute("market", market)
 
             try:

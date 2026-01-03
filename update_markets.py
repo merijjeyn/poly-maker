@@ -1,11 +1,17 @@
 import time
-from dotenv import load_dotenv
+
 import pandas as pd
-from data_updater.trading_utils import get_clob_client
-from google_utils import get_spreadsheet
-from data_updater.find_markets import cleanup_all_markets, get_all_markets, get_all_markets_detailed
+from dotenv import load_dotenv
 from gspread_dataframe import set_with_dataframe
 from logan import Logan
+
+from data_updater.find_markets import (
+    cleanup_all_markets,
+    get_all_markets,
+    get_all_markets_detailed,
+)
+from data_updater.trading_utils import get_clob_client
+from google_utils import get_spreadsheet
 
 # Initialize global variables
 load_dotenv()

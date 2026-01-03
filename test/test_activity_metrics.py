@@ -2,11 +2,13 @@
 Simple test for activity metrics functionality without external dependencies
 """
 
-import sys
 import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from configuration import TCNF
+
 
 def test_configuration_values():
     """Test that all new configuration values are accessible and have reasonable defaults"""
@@ -40,9 +42,7 @@ def test_activity_metrics_imports():
     print("\nTesting activity metrics imports...")
     
     try:
-        from data_updater.activity_metrics import (
-            calculate_market_activity_metrics
-        )
+        from data_updater.activity_metrics import calculate_market_activity_metrics
         
         print("✓ All activity metrics functions imported successfully")
         

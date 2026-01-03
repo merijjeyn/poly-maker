@@ -1,13 +1,14 @@
-import pandas as pd
-from py_clob_client.headers.headers import create_level_2_headers
-from py_clob_client.clob_types import RequestArgs
-
-from google_utils import get_spreadsheet
-from gspread_dataframe import set_with_dataframe
-import requests
 import json
 import os
+
+import pandas as pd
+import requests
+from gspread_dataframe import set_with_dataframe
 from logan import Logan
+from py_clob_client.clob_types import RequestArgs
+from py_clob_client.headers.headers import create_level_2_headers
+
+from google_utils import get_spreadsheet
 
 spreadsheet = get_spreadsheet()
 

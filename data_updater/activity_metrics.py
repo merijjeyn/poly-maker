@@ -14,14 +14,16 @@ Note: In Polymarket terminology:
 - The trades API uses token_id in the 'market' parameter
 """
 
-import pandas as pd
-import numpy as np
-import requests
 from datetime import datetime, timedelta
 from typing import Dict
+
+import numpy as np
+import pandas as pd
+import requests
 from logan import Logan
-from configuration import TCNF
 from scipy import stats
+
+from configuration import TCNF
 
 
 def get_market_trades_data(condition_id: str) -> pd.DataFrame:

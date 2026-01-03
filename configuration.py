@@ -6,6 +6,7 @@ organized into logical groups for different system components.
 """
 
 from typing import Optional
+
 from growthbook import GrowthBook
 
 

@@ -8,16 +8,19 @@ This module contains the logic for:
 These are currently stub implementations that can be filled in with custom logic.
 """
 
-from typing import Optional
 from dataclasses import dataclass
-import pandas as pd
-import trading_bot.global_state as global_state
+from typing import Optional
+
 import numpy as np
-from logan import Logan
-from google_utils import get_spreadsheet
+import pandas as pd
 from gspread_dataframe import set_with_dataframe
+from logan import Logan
+
+import trading_bot.global_state as global_state
 from configuration import TCNF
+from google_utils import get_spreadsheet
 from trading_bot.market_strategy.ans_derisked_strategy import ANSDeriskedMarketStrategy
+
 
 @dataclass
 class PositionSizeResult:

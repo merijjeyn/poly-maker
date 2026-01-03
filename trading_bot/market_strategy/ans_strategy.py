@@ -2,14 +2,13 @@ from math import log
 from typing import Optional
 
 from growthbook import GrowthBook
-
+from logan import Logan
 
 from configuration import TCNF
 from trading_bot.data_utils import get_position
 from trading_bot.market_strategy import MarketStrategy
 from trading_bot.order_books import OrderBooks
 from trading_bot.volatility_tracker import volatility_tracker
-from logan import Logan
 
 
 class AnSMarketStrategy(MarketStrategy):

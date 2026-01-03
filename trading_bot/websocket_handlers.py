@@ -1,12 +1,14 @@
-import asyncio                      # Asynchronous I/O
+import asyncio  # Asynchronous I/O
 import gc
-import json                        # JSON handling
-import websockets                  # WebSocket client
+import json  # JSON handling
+
+import websockets  # WebSocket client
 from logan import Logan
 
-from trading_bot.data_processing import process_market_data, process_user_data
 import trading_bot.global_state as global_state
 from configuration import MCNF
+from trading_bot.data_processing import process_market_data, process_user_data
+
 
 async def connect_market_websocket(chunk):
     """

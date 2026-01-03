@@ -1,15 +1,12 @@
-from py_clob_client.constants import POLYGON
-from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import OrderArgs, BalanceAllowanceParams, AssetType
-
-from web3 import Web3
-
 import json
-from logan import Logan
-
+import os
 import time
 
-import os
+from logan import Logan
+from py_clob_client.client import ClobClient
+from py_clob_client.clob_types import AssetType, BalanceAllowanceParams, OrderArgs
+from py_clob_client.constants import POLYGON
+from web3 import Web3
 
 MAX_INT = 2**256 - 1
 

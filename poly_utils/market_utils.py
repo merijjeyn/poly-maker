@@ -1,5 +1,6 @@
 from configuration import TCNF
 
+
 def calculate_market_imbalance(bids_df, asks_df, midpoint):
     # The window to look for imbalance is the hybrid of fixed number of price levels,
     # and a fixed spread size calculated from the percentage of midpoint

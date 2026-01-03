@@ -8,12 +8,15 @@ Separated from data_utils to avoid circular imports between:
 - market_strategy (trading strategies that use data_utils)
 """
 
-from logan import Logan
+import logging
+
 import trading_bot.global_state as global_state
 from google_utils import get_sheet_df
-from trading_bot.market_selection import calculate_position_sizes, filter_selected_markets
 from trading_bot.data_utils import update_liquidity
-import logging
+from trading_bot.market_making.mm_market_selection import (
+    calculate_position_sizes,
+    filter_selected_markets,
+)
 
 
 def update_reverse_tokens():

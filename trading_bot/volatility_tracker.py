@@ -1,6 +1,8 @@
-from collections import defaultdict, deque
 import time
+from collections import defaultdict, deque
+
 import numpy as np
+
 import trading_bot.global_state as global_state
 
 

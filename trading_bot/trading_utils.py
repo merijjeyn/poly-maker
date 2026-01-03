@@ -1,5 +1,7 @@
 import math
+
 from trading_bot.order_books import OrderBooks
+
 
 def get_best_bid_ask_deets(token, size):
     order_book = OrderBooks.get_order_book_exclude_self(token)
